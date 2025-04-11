@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Heart WebAR - With Click Beep</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/2.2.1/aframe/build/aframe-ar.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
+      #permissionOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        z-index: 9999;
+        color: white;
+        text-align: center;
+      }
+      #permissionButton {
+        padding: 15px 30px;
+        font-size: 18px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+      }
+      .clickable-area {
+        cursor: pointer;
+      }
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0% { transform: scale(1); opacity: 0.7; }
+        50% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 0.7; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Audio Permission Screen -->
+    <div id="permissionOverlay">
+      <h2>Heart AR Experience</h2>
+      <p>Click below to start the experience</p>
+      <button id="permissionButton">Start AR Experience</button>
+    </div>
+
+    <!-- AR Scene -->
+    <a-scene embedded arjs style="display: none;">
+      <a-assets>
+        <a-asset-item id="heartModelGLTF" src="models/cardiac_anatomy_external_view2.glb"></a-asset-item>
+        <audio id="aortaAudio" src="audio/aorta.mp3" preload="auto"></audio>
+        <audio id="ventricleAudio" src="audio/ventricle.mp3" preload="auto"></audio>
+        <!-- Base64 encoded short beep sound -->
+        <audio id="clickBeep" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU..."></audio>
+      </a-assets>
+
+      <a-light type="ambient" color="#ffffff" intensity="1.5"></a-light>
+      <a-light type="directional" color="#ffffff" intensity="3" position="5 5 5"></a-light>
+      
+      <a-marker preset="hiro">
+        <a-entity gltf-model="#heartModelGLTF" scale="0.005 0.005 0.005"></a-entity>
+        
+        <!-- Aorta - Large pulsating clickable area -->
+        <a-entity position="0 0.6 1.5" class="clickable-area pulse" data-audio="aortaAudio">
+          <a-text value="AORTA" position="0 0.25 0" scale="0.6 0.6 0.6" color="white" align="center"></a-text>
+          <a-sphere radius="0.25" color="red" opacity="0.7"></a-sphere>
+          <a-ring radius-outer="0.35" radius-inner="0.25" color="yellow" opacity="0.7"></a-ring>
+        </a-entity>
+
+        <!-- Ventricle - Large pulsating clickable area -->
+        <a-entity position="0 -0.6 1.5" class="clickable-area pulse" data-audio="ventricleAudio">
+          <a-text value="VENTRICLE" position="0 0.25 0" scale="0.6 0.6 0.6" color="white" align="center"></a-text>
+          <a-sphere radius="0.25" color="red" opacity="0.7"></a-sphere>
+          <a-ring radius-outer="0.35" radius-inner="0.25" color="yellow" opacity="0.7"></a-ring>
+        </a-entity>
+      </a-marker>
+
+      <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+      // Audio context and gain nodes for volume control
+      let audioContext;
+      let gainNodes = {};
+      let audioEnabled = false;
+
+      document.addEventListener('DOMContentLoaded', function() {
+        const permissionButton = document.getElementById('permissionButton');
+        const permissionOverlay = document.getElementById('permissionOverlay');
+        const scene = document.querySelector('a-scene');
+        
+        // Initialize audio on user interaction
+        permissionButton.addEventListener('click', function() {
+          // Create Web Audio API context
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          
+          // Setup gain nodes for each audio file
+          ['aortaAudio', 'ventricleAudio', 'clickBeep'].forEach(id => {
+            const audioElement = document.getElementById(id);
+            if (audioElement) {
+              const source = audioContext.createMediaElementSource(audioElement);
+              gainNodes[id] = audioContext.createGain();
+              // Boost volume for heart sounds, normal volume for beep
+              gainNodes[id].gain.value = id === 'clickBeep' ? 1.0 : 2.0;
+              source.connect(gainNodes[id]);
+              gainNodes[id].connect(audioContext.destination);
+            }
+          });
+          
+          // Resume audio context
+          audioContext.resume().then(() => {
+            console.log('AudioContext ready with boosted volume');
+            audioEnabled = true;
+            permissionOverlay.style.display = 'none';
+            scene.style.display = 'block';
+            
+            // Play test sound to confirm audio works
+            playTestSound();
+          }).catch(err => {
+            console.error('AudioContext failed:', err);
+            alert('Audio setup failed. Please allow audio permissions and try again.');
+          });
+        });
+        
+        // Set up click handlers
+        scene.addEventListener('loaded', function() {
+          document.querySelectorAll('.clickable-area').forEach(element => {
+            element.addEventListener('click', function() {
+              if (!audioEnabled) {
+                alert('Please enable audio first by clicking the Start button');
+                return;
+              }
+              
+              // Play click beep first
+              playBeep();
+              
+              // Then play the heart sound after a short delay
+              const audioId = this.getAttribute('data-audio');
+              const audioElement = document.getElementById(audioId);
+              
+              if (audioElement) {
+                setTimeout(() => {
+                  playAudio(audioElement);
+                }, 100); // 100ms delay after beep
+              }
+            });
+          });
+        });
+      });
+      
+      function playAudio(audioElement) {
+        // Stop and reset if currently playing
+        audioElement.pause();
+        audioElement.currentTime = 0;
+        
+        // Play with error handling
+        audioElement.play().then(() => {
+          console.log('Playing boosted audio:', audioElement.id);
+        }).catch(e => {
+          console.error('Audio playback failed:', e);
+          alert('Audio error. Please try clicking again.');
+        });
+      }
+      
+      function playBeep() {
+        const beep = document.getElementById('clickBeep');
+        if (beep) {
+          beep.currentTime = 0;
+          beep.play().catch(e => console.log('Beep play failed:', e));
+        }
+      }
+      
+      function playTestSound() {
+        // Create a test oscillator
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 440;
+        gainNode.gain.value = 0.1;
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.1);
+      }
+    </script>
+  </body>
+</html>
