@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Heart WebAR - Beep on Hover</title>
+    <title>Heart WebAR - Centered Rotation</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/2.2.1/aframe/build/aframe-ar.min.js"></script>
     <style>
@@ -29,17 +29,23 @@
     <a-scene embedded arjs style="display: none;">
       <a-assets>
         <audio id="beepSound" src="audio/beep.mp3" preload="auto"></audio>
+        <a-asset-item id="heartGLB" src="models/maagdarmstelsel.glb"></a-asset-item>
       </a-assets>
 
       <a-marker preset="hiro">
-        <!-- Spheres to hover -->
-        <a-entity class="hoverable-sphere" geometry="primitive: sphere; radius: 0.2"
-                  position="0 0.6 1.5" material="color: red; opacity: 0.6"
-                  scale-on-hover></a-entity>
+        <!-- Group for heart and spheres (rotates together) -->
+        <a-entity id="heartGroup" drag-rotate scale="0.005 0.005 0.005" position="0 0 0">
+          <!-- Heart model -->
+          <a-entity id="heartModel" gltf-model="#heartGLB" position="0 0 0"></a-entity>
 
-        <a-entity class="hoverable-sphere" geometry="primitive: sphere; radius: 0.2"
-                  position="0 -0.6 1.5" material="color: blue; opacity: 0.6"
-                  scale-on-hover></a-entity>
+          <!-- Spheres that rotate with the heart -->
+          <a-entity class="hoverable-sphere" geometry="primitive: sphere; radius: 40"
+                    position="0 120 300" material="color: red; opacity: 0.6"
+                    scale-on-hover></a-entity>
+          <a-entity class="hoverable-sphere" geometry="primitive: sphere; radius: 40"
+                    position="0 -120 300" material="color: blue; opacity: 0.6"
+                    scale-on-hover></a-entity>
+        </a-entity>
       </a-marker>
 
       <a-entity camera>
@@ -48,34 +54,97 @@
     </a-scene>
 
     <script>
-      // Scale on mouseenter component
+      // Hover + Beep Component
       AFRAME.registerComponent('scale-on-hover', {
-        schema: {
-          to: {default: '2.5 2.5 2.5', type: 'vec3'}
-        },
-
+        schema: { to: {default: '2.5 2.5 2.5', type: 'vec3'} },
         init: function () {
-          var data = this.data;
-          var el = this.el;
-          const beep = document.getElementById('beepSound'); // Get the beep sound
-
-          this.el.addEventListener('mouseenter', function () {
-            el.object3D.scale.copy(data.to);  // Scale the sphere on hover
+          const el = this.el;
+          const beep = document.getElementById('beepSound');
+          el.addEventListener('mouseenter', () => {
+            el.object3D.scale.copy(this.data.to);
             beep.pause();
-            beep.currentTime = 0; // Reset the audio time
-            beep.play().catch(err => console.error('Beep failed:', err));  // Play the beep sound
+            beep.currentTime = 0;
+            beep.play().catch(err => console.error('Beep failed:', err));
           });
-
-          this.el.addEventListener('mouseleave', function () {
-            el.object3D.scale.set(1, 1, 1);  // Reset scale when mouse leaves
+          el.addEventListener('mouseleave', () => {
+            el.object3D.scale.set(1, 1, 1);
             beep.pause();
-            beep.currentTime = 0;  // Stop the beep sound
+            beep.currentTime = 0;
           });
         }
       });
+      AFRAME.registerComponent('drag-rotate', {
+  schema: { speed: { default: 0.5 } },
+  init: function () {
+    this.isDragging = false;
+    this.previousPosition = null;
+    const el = this.el;
+    const scene = el.sceneEl;
 
+    // Mouse controls
+    scene.addEventListener('mousedown', (e) => {
+      this.isDragging = true;
+      this.previousPosition = { x: e.clientX, y: e.clientY };
+    });
+
+    window.addEventListener('mouseup', () => {
+      this.isDragging = false;
+    });
+
+    scene.addEventListener('mousemove', (e) => {
+      if (!this.isDragging) return;
+
+      const deltaX = e.clientX - this.previousPosition.x;
+      const deltaY = e.clientY - this.previousPosition.y;
+
+      const rotation = el.getAttribute('rotation');
+      el.setAttribute('rotation', {
+        x: rotation.x - deltaY * this.data.speed,
+        y: rotation.y - deltaX * this.data.speed,
+        z: rotation.z
+      });
+
+      this.previousPosition = { x: e.clientX, y: e.clientY };
+    });
+
+    // Touch controls
+    scene.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        this.isDragging = true;
+        this.previousPosition = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY
+        };
+      }
+    });
+
+    scene.addEventListener('touchend', () => {
+      this.isDragging = false;
+    });
+
+    scene.addEventListener('touchmove', (e) => {
+      if (!this.isDragging || e.touches.length !== 1) return;
+
+      const deltaX = e.touches[0].clientX - this.previousPosition.x;
+      const deltaY = e.touches[0].clientY - this.previousPosition.y;
+
+      const rotation = el.getAttribute('rotation');
+      el.setAttribute('rotation', {
+        x: rotation.x - deltaY * this.data.speed,
+        y: rotation.y - deltaX * this.data.speed,
+        z: rotation.z
+      });
+
+      this.previousPosition = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY
+      };
+    });
+  }
+});
+
+      // Start Overlay Button
       document.getElementById('startButton').addEventListener('click', () => {
-        // Start the AR scene after clicking "Start"
         document.getElementById('startOverlay').style.display = 'none';
         document.querySelector('a-scene').style.display = 'block';
       });
