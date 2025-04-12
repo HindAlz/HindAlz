@@ -1,47 +1,67 @@
-AFRAME.registerComponent('part-listener', {
-    schema: {
-      audioId: {type: 'string'}
-    },
-    init: function () {
-      this.el.addEventListener('click', () => {
-        const audio = document.querySelector(`#${this.data.audioId}`);
-        audio.play();
+AFRAME.registerComponent('add-labels-on-load', {
+  init: function () {
+    this.el.addEventListener('model-loaded', () => {
+      this.el.setAttribute('add-labels', '');
+    });
+  }
+});
+
+AFRAME.registerComponent('add-labels', {
+  init: function () {
+    const parts = [
+      {
+        name: 'Aorta',
+        position: { x: 0.3, y: 1.1, z: 0 }
+      },
+      {
+        name: 'Left Ventricle',
+        position: { x: -0.5, y: 0.2, z: 0 }
+      }
+    ];
+
+    parts.forEach((part) => {
+      // Label
+      const label = document.createElement('a-entity');
+      label.setAttribute('text', {
+        value: part.name,
+        align: 'center',
+        width: 2,
+        color: '#000'
       });
-    }
-  });
-  
-  // Example of attaching to parts of the model (use your real parts/positions)
-  AFRAME.registerComponent('add-labels', {
-    init: function () {
-      const heart = document.querySelector('#heartModel');
-  
-      // Adjust the positions to be closer to visible areas of the heart model
-      const parts = [
-        {id: 'aorta', position: '0 0.2 0.3', label: 'Aorta', audioId: 'aortaAudio'},  // Updated position for better visibility
-        {id: 'ventricle', position: '0 -0.3 0', label: 'Left Ventricle', audioId: 'ventricleAudio'}  // Adjusted position
-      ];
-  
-      parts.forEach(part => {
-        const partEl = document.createElement('a-entity');
-        partEl.setAttribute('geometry', {primitive: 'sphere', radius: 0.05});
-        partEl.setAttribute('position', part.position);
-        partEl.setAttribute('material', 'color: red; opacity: 0.5');
-        partEl.setAttribute('part-listener', `audioId: ${part.audioId}`);
-        heart.appendChild(partEl);
-  
-        const label = document.createElement('a-text');
-        label.setAttribute('value', part.label);
-        label.setAttribute('position', part.position);
-        label.setAttribute('scale', '0.3 0.3 0.3');
-        label.setAttribute('color', 'white');
-        label.setAttribute('align', 'center');
-        heart.appendChild(label);
+      label.setAttribute('position', part.position);
+      label.setAttribute('geometry', {
+        primitive: 'plane',
+        height: 0.3,
+        width: 1.2
       });
-    }
-  });
-  
-  
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelector('#heartModel').setAttribute('add-labels', '');
-  });
-  
+      label.setAttribute('material', {
+        color: '#fff',
+        opacity: 0.9
+      });
+      this.el.appendChild(label);
+
+      // Clickable invisible sphere to play beep
+      const sphere = document.createElement('a-sphere');
+      sphere.setAttribute('radius', 0.1);
+      sphere.setAttribute('position', part.position);
+      sphere.setAttribute('material', 'opacity: 0; transparent: true;');
+      sphere.setAttribute('play-beep-on-click', '');
+      this.el.appendChild(sphere);
+    });
+  }
+});
+
+AFRAME.registerComponent('play-beep-on-click', {
+  init: function () {
+    this.el.addEventListener('click', () => {
+      const audio = document.getElementById('beepAudio');
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.play().catch(err => {
+          console.warn('Audio play error:', err);
+        });
+      }
+    });
+  }
+});
