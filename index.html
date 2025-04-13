@@ -38,7 +38,7 @@
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
       }
-      /* AR.js specific optimizations */
+      /* AR.js optimizations */
       .a-enter-vr, .a-orientation-modal {
         display: none !important;
       }
@@ -55,13 +55,24 @@
         left: 0 !important;
         transform: none !important;
       }
+      /* Label styling */
+      .ar-label {
+        font-family: Arial, sans-serif;
+        font-weight: bold;
+        pointer-events: all;
+      }
+      .ar-label-bg {
+        background: rgba(255,255,255,0.8);
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.5rem;
+      }
     </style>
   </head>
   <body>
     <!-- Start Overlay -->
     <div id="startOverlay">
       <h2>Heart AR Experience</h2>
-      <p>Point your camera at the marker</p>
+      <p>Point your camera at the Hiro marker</p>
       <button id="startButton">Start</button>
     </div>
 
@@ -92,18 +103,15 @@
         emitevents="true"
         type="pattern"
         url="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/data/patt.hiro"
-        smooth="true"
-        smoothCount="5"
-        smoothTolerance="0.01"
-        smoothThreshold="2"
       >
         <a-entity
           id="markerHeart"
           visible="false"
           gltf-model="#heartGLB"
           scale="0.03 0.03 0.03"
-          add-labels-on-load
-          drag-rotate
+          rotation="0 0 0"
+          position="0 0 0"
+          ar-model-interaction
         ></a-entity>
       </a-marker>
 
@@ -131,64 +139,67 @@
       // Marker events
       const marker = document.querySelector('#marker');
       marker.addEventListener('markerFound', () => {
-        document.getElementById('markerHeart').setAttribute('visible', true);
+        const heart = document.getElementById('markerHeart');
+        heart.setAttribute('visible', true);
+        
+        // Add labels if not already added
+        if (!heart.hasAttribute('labels-added')) {
+          addLabelsToHeart(heart);
+          heart.setAttribute('labels-added', 'true');
+        }
       });
+      
       marker.addEventListener('markerLost', () => {
         document.getElementById('markerHeart').setAttribute('visible', false);
       });
 
-      // Label component
-      AFRAME.registerComponent('add-labels-on-load', {
-        init: function() {
-          this.el.addEventListener('model-loaded', () => {
-            this.addLabels();
-          });
-        },
-        
-        addLabels: function() {
-          const parts = [
-            { 
-              name: 'Aorta', 
-              position: { x: 0.5, y: 0.8, z: 0.2 },
-              audioId: 'aortaAudio',
-              color: '#FF0000'
-            },
-            { 
-              name: 'Ventricle', 
-              position: { x: -0.3, y: 0.4, z: 0.1 },
-              audioId: 'ventricleAudio',
-              color: '#00AAFF'
-            }
-          ];
+      // Add labels to heart model
+      function addLabelsToHeart(heartEntity) {
+        const parts = [
+          { 
+            name: 'Aorta', 
+            position: { x: 0.5, y: 0.8, z: 0.2 },
+            audioId: 'aortaAudio',
+            color: '#FF0000'
+          },
+          { 
+            name: 'Ventricle', 
+            position: { x: -0.3, y: 0.4, z: 0.1 },
+            audioId: 'ventricleAudio',
+            color: '#00AAFF'
+          }
+        ];
 
-          parts.forEach((part) => {
-            // Create container for label
-            const labelContainer = document.createElement('a-entity');
-            labelContainer.setAttribute('position', part.position);
-            
-            // Create background plane
-            const bg = document.createElement('a-plane');
-            bg.setAttribute('material', `color: ${part.color}; opacity: 0.8`);
-            bg.setAttribute('width', 'auto');
-            bg.setAttribute('height', 'auto');
-            bg.setAttribute('play-audio-on-click', `audioId: ${part.audioId}`);
-            bg.setAttribute('look-at', '[camera]');
-            
-            // Create text
-            const text = document.createElement('a-text');
-            text.setAttribute('value', part.name);
-            text.setAttribute('align', 'center');
-            text.setAttribute('color', '#FFFFFF');
-            text.setAttribute('width', '3');
-            text.setAttribute('position', '0 0 0.01');
-            
-            // Put it all together
-            bg.appendChild(text);
-            labelContainer.appendChild(bg);
-            this.el.appendChild(labelContainer);
-          });
-        }
-      });
+        parts.forEach((part) => {
+          // Create label container
+          const label = document.createElement('a-entity');
+          label.setAttribute('position', part.position);
+          label.setAttribute('class', 'ar-label');
+          label.setAttribute('look-at', '[camera]');
+          label.setAttribute('billboard', '');
+          
+          // Create background
+          const bg = document.createElement('a-plane');
+          bg.setAttribute('class', 'ar-label-bg');
+          bg.setAttribute('material', `color: ${part.color}; opacity: 0.8`);
+          bg.setAttribute('width', 'auto');
+          bg.setAttribute('height', 'auto');
+          bg.setAttribute('play-audio-on-click', `audioId: ${part.audioId}`);
+          
+          // Create text
+          const text = document.createElement('a-text');
+          text.setAttribute('value', part.name);
+          text.setAttribute('align', 'center');
+          text.setAttribute('color', '#FFFFFF');
+          text.setAttribute('width', '3');
+          text.setAttribute('position', '0 0 0.01');
+          
+          // Assemble components
+          bg.appendChild(text);
+          label.appendChild(bg);
+          heartEntity.appendChild(label);
+        });
+      }
 
       // Audio component
       AFRAME.registerComponent('play-audio-on-click', {
@@ -202,50 +213,51 @@
             }
           };
           this.el.addEventListener('click', this.onClick);
+          this.el.addEventListener('touchstart', this.onClick);
         },
         remove: function() {
           this.el.removeEventListener('click', this.onClick);
+          this.el.removeEventListener('touchstart', this.onClick);
         }
       });
 
-      // Mobile-optimized drag-rotate component
-      AFRAME.registerComponent('drag-rotate', {
-        schema: {
-          speed: { default: 0.5 }
-        },
+      // Rotation and Zoom interaction component
+      AFRAME.registerComponent('ar-model-interaction', {
         init: function() {
+          this.scale = 1;
           this.rotation = { x: 0, y: 0 };
           this.isDragging = false;
           this.lastPos = { x: 0, y: 0 };
           
+          // Event listeners
           this.onStart = this.onStart.bind(this);
-          this.onEnd = this.onEnd.bind(this);
           this.onMove = this.onMove.bind(this);
+          this.onEnd = this.onEnd.bind(this);
+          this.onWheel = this.onWheel.bind(this);
           
+          this.el.sceneEl.addEventListener('mousedown', this.onStart);
           this.el.sceneEl.addEventListener('touchstart', this.onStart);
-          this.el.sceneEl.addEventListener('touchend', this.onEnd);
-          this.el.sceneEl.addEventListener('touchmove', this.onMove);
+          window.addEventListener('mousemove', this.onMove);
+          window.addEventListener('touchmove', this.onMove);
+          window.addEventListener('mouseup', this.onEnd);
+          window.addEventListener('touchend', this.onEnd);
+          this.el.sceneEl.addEventListener('wheel', this.onWheel);
         },
         
         onStart: function(e) {
           this.isDragging = true;
-          this.lastPos = {
-            x: e.touches[0].clientX,
-            y: e.touches[0].clientY
-          };
+          this.lastPos = this.getInputPosition(e);
         },
         
         onMove: function(e) {
           if (!this.isDragging) return;
-          const currentPos = {
-            x: e.touches[0].clientX,
-            y: e.touches[0].clientY
-          };
+          
+          const currentPos = this.getInputPosition(e);
           const dx = currentPos.x - this.lastPos.x;
           const dy = currentPos.y - this.lastPos.y;
           
-          this.rotation.y += dx * this.data.speed;
-          this.rotation.x += dy * this.data.speed;
+          this.rotation.y += dx * 0.5;
+          this.rotation.x += dy * 0.5;
           
           this.el.setAttribute('rotation', {
             x: this.rotation.x,
@@ -261,10 +273,34 @@
           this.isDragging = false;
         },
         
+        onWheel: function(e) {
+          e.preventDefault();
+          this.scale += -e.deltaY * 0.001;
+          this.scale = Math.max(0.01, Math.min(2, this.scale));
+          this.el.setAttribute('scale', `${this.scale} ${this.scale} ${this.scale}`);
+        },
+        
+        getInputPosition: function(e) {
+          if (e.touches && e.touches.length > 0) {
+            return {
+              x: e.touches[0].clientX,
+              y: e.touches[0].clientY
+            };
+          }
+          return {
+            x: e.clientX,
+            y: e.clientY
+          };
+        },
+        
         remove: function() {
+          this.el.sceneEl.removeEventListener('mousedown', this.onStart);
           this.el.sceneEl.removeEventListener('touchstart', this.onStart);
-          this.el.sceneEl.removeEventListener('touchend', this.onEnd);
-          this.el.sceneEl.removeEventListener('touchmove', this.onMove);
+          window.removeEventListener('mousemove', this.onMove);
+          window.removeEventListener('touchmove', this.onMove);
+          window.removeEventListener('mouseup', this.onEnd);
+          window.removeEventListener('touchend', this.onEnd);
+          this.el.sceneEl.removeEventListener('wheel', this.onWheel);
         }
       });
     </script>
