@@ -2,11 +2,10 @@
 <html>
   <head>
     <title>Heart WebAR</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
     <style>
-      body { margin: 0; overflow: hidden; -webkit-touch-callout: none; }
+      body { margin: 0; overflow: hidden; }
       #startOverlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0, 0, 0, 0.9); z-index: 9999;
@@ -16,7 +15,6 @@
       button {
         margin-top: 20px; padding: 15px 30px; font-size: 18px;
         background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
       }
       #uiPanel {
         position: fixed;
@@ -32,7 +30,7 @@
       #uiPanel button {
         display: block;
         margin-bottom: 10px;
-        padding: 15px 25px;
+        padding: 10px 20px;
         font-size: 14px;
         cursor: pointer;
       }
@@ -45,42 +43,14 @@
         color: white;
         border: none;
         border-radius: 50%;
-        width: 50px;
-        height: 50px;
+        width: 40px;
+        height: 40px;
         font-size: 24px;
         cursor: pointer;
-      }
-      .loading {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.7);
-        color: white;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-      }
-      
-      @supports (-webkit-touch-callout: none) {
-        a-scene {
-          -webkit-transform: translate3d(0,0,0);
-          transform: translate3d(0,0,0);
-        }
-        button {
-          padding: 18px 30px;
-        }
       }
     </style>
   </head>
   <body>
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading">
-      <h2>Loading Assets...</h2>
-    </div>
-
     <!-- Start Overlay -->
     <div id="startOverlay">
       <h2>Start Heart AR Experience</h2>
@@ -102,7 +72,6 @@
       embedded
       tap-place
       arjs="sourceType: webcam; debugUIEnabled: false; cameraParametersUrl: camera_para.dat"
-      renderer="logarithmicDepthBuffer: true; precision: medium;"
     >
       <a-assets>
         <audio id="beepSound" src="audio/beep.mp3" preload="auto"></audio>
@@ -143,45 +112,6 @@
     <script>
       let mode = null;
       let placingEnabled = false;
-      let lastTime = performance.now();
-      let assetsLoaded = false;
-
-      // Check if iOS
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-      // Performance monitoring
-      const perfMonitor = setInterval(() => {
-        if (performance.memory) {
-          console.log(`Memory: ${(performance.memory.usedJSHeapSize / 1048576).toFixed(2)} MB`);
-        }
-        console.log(`FPS: ${(1000 / (performance.now() - lastTime)).toFixed(1)}`);
-        lastTime = performance.now();
-      }, 3000);
-
-      // Asset loading check
-      function checkAssetsLoaded() {
-        if (assetsLoaded) return;
-        
-        const scene = document.querySelector('a-scene');
-        if (scene.hasLoaded) {
-          assetsLoaded = true;
-          document.getElementById('loadingOverlay').style.display = 'none';
-          console.log('All assets loaded');
-        } else {
-          setTimeout(checkAssetsLoaded, 500);
-        }
-      }
-
-      // Initialize after scene loads
-      document.querySelector('a-scene').addEventListener('loaded', function() {
-        checkAssetsLoaded();
-        
-        // iOS-specific optimizations
-        if (isIOS) {
-          document.querySelector('a-scene').setAttribute('renderer', 'colorManagement: true; precision: low;');
-        }
-      });
 
       function setMode(selectedMode) {
         mode = selectedMode;
@@ -202,24 +132,17 @@
         panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
       }
 
-      document.getElementById('startButton').addEventListener('click', function() {
+      document.getElementById('startButton').addEventListener('click', function () {
         document.getElementById('startOverlay').style.display = 'none';
-        
-        // iOS audio workaround
+
         const audios = document.querySelectorAll('audio');
-        const playPromises = [];
-        
         audios.forEach(audio => {
-          const promise = audio.play().catch(err => {
-            console.warn('Audio play failed:', err);
+          audio.play().then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          }).catch(err => {
+            console.warn('Autoplay unlock failed:', err);
           });
-          playPromises.push(promise);
-        });
-        
-        Promise.all(playPromises).then(() => {
-          setTimeout(() => {
-            audios.forEach(audio => audio.pause());
-          }, 100);
         });
       });
 
@@ -234,29 +157,14 @@
         document.getElementById('markerHeart').setAttribute('visible', false);
       });
 
-      // Touch event handling for iOS
-      if (isIOS) {
-        document.addEventListener('touchmove', function(e) {
-          if (mode === 'markerless' && placingEnabled) {
-            e.preventDefault();
-          }
-        }, { passive: false });
-      }
-
-      // Tap-place component with iOS optimizations
+      // Tap-place logic
       AFRAME.registerComponent('tap-place', {
-        init: function() {
+        init: function () {
           const scene = this.el.sceneEl;
           const placedHeart = document.getElementById('placedHeart');
-          let lastTapTime = 0;
 
           const placeHeart = (event) => {
             if (mode !== 'markerless' || !placingEnabled) return;
-            
-            // Prevent double taps on iOS
-            const now = Date.now();
-            if (now - lastTapTime < 500) return;
-            lastTapTime = now;
 
             const touch = event.touches ? event.touches[0] : event;
             const mouse = new THREE.Vector2(
@@ -276,7 +184,7 @@
           };
 
           scene.addEventListener('click', placeHeart);
-          scene.addEventListener('touchend', placeHeart);
+          scene.addEventListener('touchstart', placeHeart);
         }
       });
 
@@ -285,12 +193,10 @@
         const placedHeart = document.getElementById('placedHeart');
 
         [markerHeart, placedHeart].forEach(model => {
-          if (model) {
-            model.setAttribute('visible', false);
-            model.setAttribute('position', '0 0 0');
-            model.setAttribute('rotation', '0 0 0');
-            model.setAttribute('scale', '0.03 0.03 0.03');
-          }
+          model.setAttribute('visible', false);
+          model.setAttribute('position', '0 0 0');
+          model.setAttribute('rotation', '0 0 0');
+          model.setAttribute('scale', '0.03 0.03 0.03');
         });
 
         if (mode === 'markerless') {
@@ -299,188 +205,164 @@
         }
       }
 
-      // Label components with simplified approach
       AFRAME.registerComponent('add-labels-on-load', {
-        init: function() {
-          if (this.el.dataset.labelsAdded) return;
-          this.el.dataset.labelsAdded = true;
-          
+        init: function () {
           this.el.addEventListener('model-loaded', () => {
-            this.addLabels();
+            this.el.setAttribute('add-labels', '');
           });
-        },
-        
-        addLabels: function() {
-          const parts = [
-            { name: 'Stomach', position: { x: 0.1, y: 0.25, z: 0.1 }, audioId: 'aortaAudio' },
-            { name: 'Liver', position: { x: 3, y: 1, z: -9 }, audioId: 'ventricleAudio' }
-          ];
-
-          parts.forEach((part) => {
-            const label = document.createElement('a-entity');
-            label.setAttribute('text', {
-              value: part.name,
-              align: 'center',
-              width: 2,
-              color: '#000',
-              zOffset: 0.01
-            });
-            
-            const bg = document.createElement('a-plane');
-            bg.setAttribute('material', 'color: #FFF; opacity: 0.9');
-            bg.setAttribute('width', 'auto');
-            bg.setAttribute('height', 'auto');
-            bg.setAttribute('position', part.position);
-            bg.setAttribute('class', 'clickable');
-            bg.setAttribute('play-audio-on-click', `audioId: ${part.audioId}`);
-            bg.setAttribute('face-camera', '');
-            
-            bg.appendChild(label);
-            this.el.appendChild(bg);
-          });
-        }
-      });
-
-      AFRAME.registerComponent('play-audio-on-click', {
-        schema: { audioId: { type: 'string' } },
-        init: function() {
-          this.onClick = () => {
-            const audio = document.querySelector(`#${this.data.audioId}`);
-            if (audio) {
-              audio.currentTime = 0;
-              audio.play().catch(e => console.warn('Audio play failed:', e));
-            }
-          };
-          this.el.addEventListener('click', this.onClick);
-        },
-        remove: function() {
-          this.el.removeEventListener('click', this.onClick);
         }
       });
 
       AFRAME.registerComponent('face-camera', {
-        tick: function() {
-          const camera = this.el.sceneEl.camera.el;
-          if (camera) {
-            this.el.object3D.lookAt(camera.object3D.position);
-          }
+        tick: function () {
+          const cameraPosition = this.el.sceneEl.camera.el.object3D.position;
+          this.el.object3D.lookAt(cameraPosition);
         }
       });
 
-      // Optimized drag-rotate component for mobile
+      AFRAME.registerComponent('add-labels', {
+  init: function () {
+    if (this.el.dataset.labelsAdded) return;
+    this.el.dataset.labelsAdded = true;
+
+    const parts = [
+      { name: 'Stomach', position: { x: 0.1, y: 0.25, z: 0.1 }, audioId: 'aortaAudio' },
+      { name: 'Liver', position: { x: 3, y: 1, z: -9 }, audioId: 'ventricleAudio' }
+    ];
+
+    parts.forEach((part) => {
+      const textEntity = document.createElement('a-entity');
+      textEntity.setAttribute('text', {
+        value: part.name,
+        align: 'center',
+        width: 2,
+        color: '#000'
+      });
+      textEntity.setAttribute('position', '0 0 0.01');
+
+      const labelPlane = document.createElement('a-plane');
+      labelPlane.setAttribute('width', 1.5);
+      labelPlane.setAttribute('height', 0.5);
+      labelPlane.setAttribute('material', { color: '#fff', opacity: 0.9 });
+      labelPlane.setAttribute('position', part.position);
+      labelPlane.setAttribute('class', 'clickable');
+      labelPlane.setAttribute('play-audio-on-click', `audioId: ${part.audioId}`);
+      labelPlane.setAttribute('face-camera', '');
+
+      labelPlane.appendChild(textEntity);
+      this.el.appendChild(labelPlane);
+    });
+  }
+});
+
+
+      AFRAME.registerComponent('play-audio-on-click', {
+  schema: { audioId: { type: 'string' } },
+  init: function () {
+    this.el.addEventListener('click', () => {
+      const audio = document.querySelector(`#${this.data.audioId}`);
+      if (audio && audio.components && audio.components.sound) {
+        audio.components.sound.playSound();
+      } else {
+        console.warn(`Audio component not ready or missing: #${this.data.audioId}`);
+      }
+    });
+  }
+});
+
+
       AFRAME.registerComponent('drag-rotate', {
         schema: {
-          speed: { default: isIOS ? 0.5 : 0.15 },
-          zoomSpeed: { default: isIOS ? 0.002 : 0.0008 },
-          panSpeed: { default: isIOS ? 0.003 : 0.0015 }
+          speed: { default: 0.15 },
+          zoomSpeed: { default: 0.0008 },
+          panSpeed: { default: 0.0015 }
         },
-        init: function() {
+        init: function () {
           this.isDragging = false;
+          this.previousPosition = null;
           this.scale = 1;
           this.pan = { x: 0, y: 0 };
           this.rotation = { x: 0, y: 0 };
           this.el.setAttribute('rotation', this.rotation);
 
-          const scene = this.el.sceneEl;
-          
-          // Mouse events
-          scene.addEventListener('mousedown', this.onDragStart.bind(this));
-          window.addEventListener('mouseup', this.onDragEnd.bind(this));
-          scene.addEventListener('mousemove', this.onDragMove.bind(this));
-          
-          // Touch events
-          scene.addEventListener('touchstart', this.onTouchStart.bind(this));
-          scene.addEventListener('touchend', this.onTouchEnd.bind(this));
-          scene.addEventListener('touchmove', this.onTouchMove.bind(this));
-          
-          // Wheel event
-          scene.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
-        },
-        
-        onDragStart: function(e) {
-          this.isDragging = true;
-          this.prevPos = { x: e.clientX, y: e.clientY };
-        },
-        
-        onDragMove: function(e) {
-          if (!this.isDragging) return;
-          const dx = e.clientX - this.prevPos.x;
-          const dy = e.clientY - this.prevPos.y;
-          
-          this.rotation.y -= dx * this.data.speed;
-          this.rotation.x -= dy * this.data.speed;
-          this.el.setAttribute('rotation', this.rotation);
-          
-          this.prevPos = { x: e.clientX, y: e.clientY };
-        },
-        
-        onDragEnd: function() {
-          this.isDragging = false;
-        },
-        
-        onTouchStart: function(e) {
-          if (e.touches.length === 1) {
+          const el = this.el;
+          const scene = el.sceneEl;
+
+          scene.addEventListener('mousedown', (e) => {
             this.isDragging = true;
-            this.prevPos = {
-              x: e.touches[0].clientX,
-              y: e.touches[0].clientY
-            };
-          } else if (e.touches.length === 2) {
-            this.isDragging = false;
-            this.initialPinchDistance = this.getPinchDistance(e);
-            this.initialScale = this.scale;
-            this.prevMid = this.getMidpoint(e);
-          }
-        },
-        
-        onTouchMove: function(e) {
-          if (e.touches.length === 1 && this.isDragging) {
-            const dx = e.touches[0].clientX - this.prevPos.x;
-            const dy = e.touches[0].clientY - this.prevPos.y;
-            
+            this.previousPosition = { x: e.clientX, y: e.clientY };
+          });
+          window.addEventListener('mouseup', () => { this.isDragging = false; });
+          scene.addEventListener('mousemove', (e) => {
+            if (!this.isDragging) return;
+            const dx = e.clientX - this.previousPosition.x;
+            const dy = e.clientY - this.previousPosition.y;
             this.rotation.y -= dx * this.data.speed;
             this.rotation.x -= dy * this.data.speed;
-            this.el.setAttribute('rotation', this.rotation);
-            
-            this.prevPos = {
-              x: e.touches[0].clientX,
-              y: e.touches[0].clientY
-            };
-          } else if (e.touches.length === 2) {
-            const newDistance = this.getPinchDistance(e);
-            const scaleChange = newDistance / this.initialPinchDistance;
-            this.scale = Math.max(0.001, Math.min(5, this.initialScale * scaleChange));
-            this.el.setAttribute('scale', `${this.scale} ${this.scale} ${this.scale}`);
-            
-            const newMid = this.getMidpoint(e);
-            const dx = (newMid.x - this.prevMid.x) * this.data.panSpeed;
-            const dy = -(newMid.y - this.prevMid.y) * this.data.panSpeed;
-            
-            this.pan.x += dx;
-            this.pan.y += dy;
-            this.el.setAttribute('position', { x: this.pan.x, y: this.pan.y, z: 0 });
-            this.prevMid = newMid;
-          }
+            el.setAttribute('rotation', this.rotation);
+            this.previousPosition = { x: e.clientX, y: e.clientY };
+          });
+
+          scene.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            this.scale += -e.deltaY * this.data.zoomSpeed;
+            this.scale = Math.max(0.001, Math.min(5, this.scale));
+            el.setAttribute('scale', `${this.scale} ${this.scale} ${this.scale}`);
+          });
+
+          scene.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+              this.isDragging = true;
+              this.previousPosition = {
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY
+              };
+            } else if (e.touches.length === 2) {
+              this.isDragging = false;
+              this.initialPinchDistance = this.getPinchDistance(e);
+              this.initialScale = this.scale;
+              this.previousPan = this.getMidpoint(e);
+            }
+          });
+
+          scene.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1 && this.isDragging) {
+              const dx = e.touches[0].clientX - this.previousPosition.x;
+              const dy = e.touches[0].clientY - this.previousPosition.y;
+              this.rotation.y -= dx * this.data.speed;
+              this.rotation.x -= dy * this.data.speed;
+              el.setAttribute('rotation', this.rotation);
+              this.previousPosition = {
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY
+              };
+            } else if (e.touches.length === 2) {
+              const newDistance = this.getPinchDistance(e);
+              const scaleChange = newDistance / this.initialPinchDistance;
+              this.scale = this.initialScale * scaleChange;
+              this.scale = Math.max(0.001, Math.min(5, this.scale));
+              el.setAttribute('scale', `${this.scale} ${this.scale} ${this.scale}`);
+
+              const newMid = this.getMidpoint(e);
+              const dx = (newMid.x - this.previousPan.x) * this.data.panSpeed;
+              const dy = -(newMid.y - this.previousPan.y) * this.data.panSpeed;
+              this.pan.x += dx;
+              this.pan.y += dy;
+              el.setAttribute('position', { x: this.pan.x, y: this.pan.y, z: 0 });
+              this.previousPan = newMid;
+            }
+          });
+
+          scene.addEventListener('touchend', () => {
+            this.isDragging = false;
+          });
         },
-        
-        onTouchEnd: function() {
-          this.isDragging = false;
-        },
-        
-        onWheel: function(e) {
-          e.preventDefault();
-          this.scale += -e.deltaY * this.data.zoomSpeed;
-          this.scale = Math.max(0.001, Math.min(5, this.scale));
-          this.el.setAttribute('scale', `${this.scale} ${this.scale} ${this.scale}`);
-        },
-        
-        getPinchDistance: function(e) {
+        getPinchDistance: function (e) {
           const dx = e.touches[0].clientX - e.touches[1].clientX;
           const dy = e.touches[0].clientY - e.touches[1].clientY;
           return Math.sqrt(dx * dx + dy * dy);
         },
-        
-        getMidpoint: function(e) {
+        getMidpoint: function (e) {
           return {
             x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
             y: (e.touches[0].clientY + e.touches[1].clientY) / 2
