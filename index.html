@@ -10,35 +10,36 @@
   </head>
   <body>
     <a-scene
-  embedded
-  arjs="sourceType: webcam; debugUIEnabled: false; cameraParametersUrl: camera_para.dat"
->
-  <a-assets>
-    <audio id="aortaAudio" src="audio/aorta.mp3" preload="auto"></audio>
-    <audio id="ventricleAudio" src="audio/ventricle.mp3" preload="auto"></audio>
-    <a-asset-item id="heartGLB" src="body.glb"></a-asset-item>
-  </a-assets>
+      embedded
+      arjs="sourceType: webcam; debugUIEnabled: false; cameraParametersUrl: camera_para.dat"
+    >
+      <a-assets>
+        <audio id="aortaAudio" src="audio/aorta.mp3" preload="auto"></audio>
+        <audio id="ventricleAudio" src="audio/ventricle.mp3" preload="auto"></audio>
+        <a-asset-item id="heartGLB" src="body.glb"></a-asset-item>
+      </a-assets>
 
-  <!-- Lighting -->
-  <a-entity light="type: ambient; color: #ffffff; intensity: 1.5"></a-entity>
-  <a-entity light="type: directional; color: #ffffff; intensity: 1" position="1 2 1"></a-entity>
+      <!-- Lighting -->
+      <a-entity light="type: ambient; color: #ffffff; intensity: 1.5"></a-entity>
+      <a-entity light="type: directional; color: #ffffff; intensity: 1" position="1 2 1"></a-entity>
 
-  <!-- Marker and Model -->
-  <a-marker preset="hiro" id="marker" emitevents="true">
-    <a-entity
-      id="heartModel"
-      gltf-model="#heartGLB"
-      scale="0.03 0.03 0.03"
-      add-labels-on-load
-    ></a-entity>
-  </a-marker>
+      <!-- Marker and Model -->
+      <a-marker preset="hiro" id="marker" emitevents="true">
+        <a-entity
+          id="heartModel"
+          gltf-model="#heartGLB"
+          scale="0.03 0.03 0.03"
+          add-labels-on-load
+          rotation-listener
+        ></a-entity>
+      </a-marker>
 
-  <!-- Camera + Cursor -->
-  <a-entity camera cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
-</a-scene>
-
+      <!-- Camera + Cursor -->
+      <a-entity camera cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
+    </a-scene>
 
     <script>
+      // Enable label creation when model is loaded
       AFRAME.registerComponent('add-labels-on-load', {
         init: function () {
           this.el.addEventListener('model-loaded', () => {
@@ -47,50 +48,51 @@
         }
       });
 
+      // Add labels to the model
       AFRAME.registerComponent('add-labels', {
-  init: function () {
-    const parts = [
-      {
-        name: 'Aorta',
-        position: { x: 0.3, y: 1.1, z: 0 },
-        audioId: 'aortaAudio'
-      },
-      {
-        name: 'Left Ventricle',
-        position: { x: -0.5, y: 0.2, z: 0 },
-        audioId: 'ventricleAudio'
-      }
-    ];
+        init: function () {
+          const parts = [
+            {
+              name: 'Aorta',
+              position: { x: 0.3, y: 1.1, z: 0 },
+              audioId: 'aortaAudio'
+            },
+            {
+              name: 'Left Ventricle',
+              position: { x: -0.5, y: 0.2, z: 0 },
+              audioId: 'ventricleAudio'
+            }
+          ];
 
-    parts.forEach((part) => {
-      const label = document.createElement('a-entity');
-      label.setAttribute('text', {
-        value: part.name,
-        align: 'center',
-        width: 4,             // Increased text width
-        color: '#000',
-        baseline: 'center',
-        wrapCount: 20         // Keeps text on one line
+          parts.forEach((part) => {
+            const label = document.createElement('a-entity');
+            label.setAttribute('text', {
+              value: part.name,
+              align: 'center',
+              width: 6, // Bigger
+              color: '#000',
+              baseline: 'center',
+              wrapCount: 30
+            });
+            label.setAttribute('position', part.position);
+            label.setAttribute('geometry', {
+              primitive: 'plane',
+              height: 0.7, // Bigger
+              width: 3     // Bigger
+            });
+            label.setAttribute('material', {
+              color: '#fff',
+              opacity: 0.9
+            });
+            label.setAttribute('class', 'clickable');
+            label.setAttribute('play-audio-on-click', `audioId: ${part.audioId}`);
+
+            this.el.appendChild(label);
+          });
+        }
       });
-      label.setAttribute('position', part.position);
-      label.setAttribute('geometry', {
-        primitive: 'plane',
-        height: 0.5,          // Increased label height
-        width: 2              // Increased label width
-      });
-      label.setAttribute('material', {
-        color: '#fff',
-        opacity: 0.9
-      });
-      label.setAttribute('class', 'clickable');
-      label.setAttribute('play-audio-on-click', `audioId: ${part.audioId}`);
 
-      this.el.appendChild(label);
-    });
-  }
-});
-
-
+      // Audio playback when label clicked
       AFRAME.registerComponent('play-audio-on-click', {
         schema: { audioId: { type: 'string' } },
         init: function () {
@@ -100,6 +102,44 @@
               audio.play().catch(err => console.warn('Audio play error:', err));
             }
           });
+        }
+      });
+
+      // Rotation component using touch/mouse drag
+      AFRAME.registerComponent('rotation-listener', {
+        init: function () {
+          let isDragging = false;
+          let previousX = null;
+
+          const el = this.el;
+
+          const onStart = (e) => {
+            isDragging = true;
+            previousX = e.touches ? e.touches[0].clientX : e.clientX;
+          };
+
+          const onMove = (e) => {
+            if (!isDragging) return;
+            const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+            const deltaX = currentX - previousX;
+            previousX = currentX;
+
+            const rotation = el.getAttribute('rotation');
+            rotation.y += deltaX * 0.5; // sensitivity
+            el.setAttribute('rotation', rotation);
+          };
+
+          const onEnd = () => {
+            isDragging = false;
+          };
+
+          document.addEventListener('mousedown', onStart);
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onEnd);
+
+          document.addEventListener('touchstart', onStart);
+          document.addEventListener('touchmove', onMove);
+          document.addEventListener('touchend', onEnd);
         }
       });
     </script>
