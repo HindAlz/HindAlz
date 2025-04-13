@@ -1,155 +1,492 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>AR Anatomical Model with Labels</title>
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/2.2.1/aframe/build/aframe-ar.min.js"></script>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    .a-loader-title { display: none; }
-  </style>
-</head>
-<body>
-  <a-scene
-    embedded
-    arjs="sourceType: webcam; debugUIEnabled: false;"
-    vr-mode-ui="enabled: false"
-    renderer="logarithmicDepthBuffer: true;"
-  >
-    <a-assets>
-      <!-- 3D Model -->
-      <a-asset-item id="heartModel" src="heart.glb"></a-asset-item>
-
-      <!-- Audio Files -->
-      <audio id="audio-heart" src="audio/heart.mp3"></audio>
-      <audio id="audio-liver" src="audio/liver.mp3"></audio>
-      <audio id="audio-stomach" src="audio/stomach.mp3"></audio>
-      <audio id="audio-pancreas" src="audio/pancreas.mp3"></audio>
-      <audio id="audio-gallbladder" src="audio/gallbladder.mp3"></audio>
-      <audio id="audio-smallintestine" src="audio/smallintestine.mp3"></audio>
-      <audio id="audio-largeintestine" src="audio/largeintestine.mp3"></audio>
-    </a-assets>
-
-    <!-- Marker -->
-    <a-marker type="pattern" url="marker.patt">
-      <a-entity id="modelContainer" scale="0.5 0.5 0.5">
-        <a-gltf-model src="#heartModel"></a-gltf-model>
-
-        <!-- Labels and Audio Triggers -->
-        <a-entity id="labels" add-labels></a-entity>
-      </a-entity>
-    </a-marker>
-
-    <a-entity camera></a-entity>
-  </a-scene>
-
-  <script>
-    AFRAME.registerComponent('add-labels', {
-      init: function () {
-        const labels = [
-          { name: 'Heart', position: { x: 0, y: 1, z: 0 }, audioId: 'audio-heart' },
-          { name: 'Liver', position: { x: 1, y: 0.5, z: 0 }, audioId: 'audio-liver' },
-          { name: 'Stomach', position: { x: -1, y: 0.5, z: 0 }, audioId: 'audio-stomach' },
-          { name: 'Pancreas', position: { x: 0.5, y: 0.3, z: 1 }, audioId: 'audio-pancreas' },
-          { name: 'Gallbladder', position: { x: -0.5, y: 0.3, z: 1 }, audioId: 'audio-gallbladder' },
-          { name: 'Small Intestine', position: { x: 0.5, y: -0.5, z: 0 }, audioId: 'audio-smallintestine' },
-          { name: 'Large Intestine', position: { x: -0.5, y: -0.5, z: 0 }, audioId: 'audio-largeintestine' }
-        ];
-
-        const container = this.el;
-        labels.forEach(part => {
-          const label = document.createElement('a-entity');
-          label.setAttribute('position', part.position);
-          label.setAttribute('scale', '0.3 0.3 0.3');
-
-          const labelPlane = document.createElement('a-plane');
-          labelPlane.setAttribute('width', '1');
-          labelPlane.setAttribute('height', '0.4');
-          labelPlane.setAttribute('color', '#ffcc00');
-          labelPlane.setAttribute('look-at', '[camera]');
-          labelPlane.setAttribute('text', {
-            value: part.name,
-            align: 'center',
-            color: '#000000',
-            width: 2
-          });
-          labelPlane.setAttribute('play-audio-on-click', `audioId: ${part.audioId}`);
-          label.appendChild(labelPlane);
-          container.appendChild(label);
-        });
+  <head>
+    <title>Heart WebAR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <style>
+      body { margin: 0; overflow: hidden; -webkit-touch-callout: none; }
+      #startOverlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.9); z-index: 9999;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        color: white; text-align: center;
       }
-    });
+      button {
+        margin-top: 20px; padding: 15px 30px; font-size: 18px;
+        background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #uiPanel {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        background: rgba(255, 255, 255, 0.85);
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        pointer-events: auto;
+      }
+      #uiPanel button {
+        display: block;
+        margin-bottom: 10px;
+        padding: 15px 25px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      #togglePanel {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 11;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+        cursor: pointer;
+      }
+      .loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+      }
+      
+      @supports (-webkit-touch-callout: none) {
+        a-scene {
+          -webkit-transform: translate3d(0,0,0);
+          transform: translate3d(0,0,0);
+        }
+        button {
+          padding: 18px 30px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading">
+      <h2>Loading Assets...</h2>
+    </div>
 
-    AFRAME.registerComponent('play-audio-on-click', {
-      schema: { audioId: { type: 'string' } },
-      init: function () {
-        this.el.addEventListener('click', () => {
-          const audio = document.querySelector(`#${this.data.audioId}`);
-          if (audio) {
-            audio.pause();
-            audio.currentTime = 0;
-            audio.play();
+    <!-- Start Overlay -->
+    <div id="startOverlay">
+      <h2>Start Heart AR Experience</h2>
+      <button id="startButton">Start</button>
+    </div>
+
+    <!-- UI Toggle -->
+    <button id="togglePanel" onclick="togglePanel()">☰</button>
+
+    <!-- UI Panel -->
+    <div id="uiPanel">
+      <button onclick="setMode('marker')">Use Marker</button>
+      <button onclick="setMode('markerless')">Place in Space</button>
+      <button onclick="resetScene()">Reset</button>
+    </div>
+
+    <!-- Scene -->
+    <a-scene
+      embedded
+      tap-place
+      arjs="sourceType: webcam; debugUIEnabled: false; cameraParametersUrl: camera_para.dat"
+      renderer="logarithmicDepthBuffer: true; precision: medium;"
+    >
+      <a-assets>
+        <audio id="beepSound" src="audio/beep.mp3" preload="auto"></audio>
+        <a-asset-item id="heartGLB" src="body.glb"></a-asset-item>
+      </a-assets>
+
+      <!-- Marker-based -->
+      <a-marker preset="hiro" id="marker" emitevents="true">
+        <a-entity
+          id="markerHeart"
+          visible="false"
+          gltf-model="#heartGLB"
+          scale="0.03 0.03 0.03"
+          add-labels-on-load
+          drag-rotate
+        ></a-entity>
+      </a-marker>
+
+      <!-- Markerless -->
+      <a-entity
+        id="placedHeart"
+        visible="false"
+        gltf-model="#heartGLB"
+        scale="0.03 0.03 0.03"
+        add-labels-on-load
+        drag-rotate
+      ></a-entity>
+
+      <!-- Audio -->
+      <a-sound id="heartSound" src="#beepSound" autoplay="false"></a-sound>
+      <a-sound id="aortaAudio" src="audio/aorta.mp3" preload="auto" autoplay="false"></a-sound>
+      <a-sound id="ventricleAudio" src="audio/ventricle.mp3" preload="auto" autoplay="false"></a-sound>
+
+      <!-- Camera -->
+      <a-entity camera cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
+    </a-scene>
+
+    <script>
+      let mode = null;
+      let placingEnabled = false;
+      let lastTime = performance.now();
+      let assetsLoaded = false;
+
+      // Check if iOS
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+      // Performance monitoring
+      const perfMonitor = setInterval(() => {
+        if (performance.memory) {
+          console.log(`Memory: ${(performance.memory.usedJSHeapSize / 1048576).toFixed(2)} MB`);
+        }
+        console.log(`FPS: ${(1000 / (performance.now() - lastTime)).toFixed(1)}`);
+        lastTime = performance.now();
+      }, 3000);
+
+      // Asset loading check
+      function checkAssetsLoaded() {
+        if (assetsLoaded) return;
+        
+        const scene = document.querySelector('a-scene');
+        if (scene.hasLoaded) {
+          assetsLoaded = true;
+          document.getElementById('loadingOverlay').style.display = 'none';
+          console.log('All assets loaded');
+        } else {
+          setTimeout(checkAssetsLoaded, 500);
+        }
+      }
+
+      // Initialize after scene loads
+      document.querySelector('a-scene').addEventListener('loaded', function() {
+        checkAssetsLoaded();
+        
+        // iOS-specific optimizations
+        if (isIOS) {
+          document.querySelector('a-scene').setAttribute('renderer', 'colorManagement: true; precision: low;');
+        }
+      });
+
+      function setMode(selectedMode) {
+        mode = selectedMode;
+        document.getElementById('markerHeart').setAttribute('visible', false);
+        document.getElementById('placedHeart').setAttribute('visible', false);
+
+        if (mode === 'marker') {
+          alert('Point your camera at the marker.');
+          placingEnabled = false;
+        } else if (mode === 'markerless') {
+          alert('Tap to place the heart.');
+          placingEnabled = true;
+        }
+      }
+
+      function togglePanel() {
+        const panel = document.getElementById('uiPanel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      }
+
+      document.getElementById('startButton').addEventListener('click', function() {
+        document.getElementById('startOverlay').style.display = 'none';
+        
+        // iOS audio workaround
+        const audios = document.querySelectorAll('audio');
+        const playPromises = [];
+        
+        audios.forEach(audio => {
+          const promise = audio.play().catch(err => {
+            console.warn('Audio play failed:', err);
+          });
+          playPromises.push(promise);
+        });
+        
+        Promise.all(playPromises).then(() => {
+          setTimeout(() => {
+            audios.forEach(audio => audio.pause());
+          }, 100);
+        });
+      });
+
+      // Marker show/hide
+      const marker = document.querySelector('#marker');
+      marker.addEventListener('markerFound', () => {
+        if (mode === 'marker') {
+          document.getElementById('markerHeart').setAttribute('visible', true);
+        }
+      });
+      marker.addEventListener('markerLost', () => {
+        document.getElementById('markerHeart').setAttribute('visible', false);
+      });
+
+      // Touch event handling for iOS
+      if (isIOS) {
+        document.addEventListener('touchmove', function(e) {
+          if (mode === 'markerless' && placingEnabled) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+      }
+
+      // Tap-place component with iOS optimizations
+      AFRAME.registerComponent('tap-place', {
+        init: function() {
+          const scene = this.el.sceneEl;
+          const placedHeart = document.getElementById('placedHeart');
+          let lastTapTime = 0;
+
+          const placeHeart = (event) => {
+            if (mode !== 'markerless' || !placingEnabled) return;
+            
+            // Prevent double taps on iOS
+            const now = Date.now();
+            if (now - lastTapTime < 500) return;
+            lastTapTime = now;
+
+            const touch = event.touches ? event.touches[0] : event;
+            const mouse = new THREE.Vector2(
+              (touch.clientX / window.innerWidth) * 2 - 1,
+              -(touch.clientY / window.innerHeight) * 2 + 1
+            );
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, scene.camera);
+
+            const direction = raycaster.ray.direction.clone().normalize();
+            const position = raycaster.ray.origin.clone().add(direction.multiplyScalar(1.5));
+
+            placedHeart.setAttribute('position', position);
+            placedHeart.setAttribute('visible', true);
+            placingEnabled = false;
+          };
+
+          scene.addEventListener('click', placeHeart);
+          scene.addEventListener('touchend', placeHeart);
+        }
+      });
+
+      function resetScene() {
+        const markerHeart = document.getElementById('markerHeart');
+        const placedHeart = document.getElementById('placedHeart');
+
+        [markerHeart, placedHeart].forEach(model => {
+          if (model) {
+            model.setAttribute('visible', false);
+            model.setAttribute('position', '0 0 0');
+            model.setAttribute('rotation', '0 0 0');
+            model.setAttribute('scale', '0.03 0.03 0.03');
           }
         });
-      }
-    });
 
-    AFRAME.registerComponent('drag-rotate', {
-      schema: {
-        rotationFactor: { type: 'number', default: 5 },
-        zoomFactor: { type: 'number', default: 0.005 },
-        panFactor: { type: 'number', default: 0.005 },
-        scale: { type: 'number', default: 1 }
-      },
-      init: function () {
-        this.previousPosition = null;
-        this.previousDistance = null;
-        this.isDragging = false;
-        this.el.sceneEl.addEventListener('touchstart', this.handleTouchStart.bind(this));
-        this.el.sceneEl.addEventListener('touchmove', this.handleTouchMove.bind(this));
-        this.el.sceneEl.addEventListener('touchend', this.handleTouchEnd.bind(this));
-      },
-      handleTouchStart: function (e) {
-        if (e.touches.length === 1) {
-          this.isDragging = true;
-          this.previousPosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        } else if (e.touches.length === 2) {
-          this.previousDistance = this.getTouchDistance(e.touches);
+        if (mode === 'markerless') {
+          placingEnabled = true;
+          alert('Tap to place the heart again.');
         }
-      },
-      handleTouchMove: function (e) {
-        if (e.touches.length === 1 && this.isDragging) {
-          const dx = e.touches[0].clientX - this.previousPosition.x;
-          const dy = e.touches[0].clientY - this.previousPosition.y;
-          const rotation = this.el.getAttribute('rotation');
-          this.el.setAttribute('rotation', {
-            x: rotation.x + dy / this.data.rotationFactor,
-            y: rotation.y + dx / this.data.rotationFactor,
-            z: rotation.z
+      }
+
+      // Label components with simplified approach
+      AFRAME.registerComponent('add-labels-on-load', {
+        init: function() {
+          if (this.el.dataset.labelsAdded) return;
+          this.el.dataset.labelsAdded = true;
+          
+          this.el.addEventListener('model-loaded', () => {
+            this.addLabels();
           });
-          this.previousPosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        } else if (e.touches.length === 2) {
-          const currentDistance = this.getTouchDistance(e.touches);
-          const delta = currentDistance - this.previousDistance;
-          this.data.scale += delta * this.data.zoomFactor;
-          this.data.scale = Math.max(0.1, Math.min(5, this.data.scale));
-          this.el.setAttribute('scale', `${this.data.scale} ${this.data.scale} ${this.data.scale}`);
-          this.previousDistance = currentDistance;
-        }
-      },
-      handleTouchEnd: function () {
-        this.isDragging = false;
-        this.previousDistance = null;
-      },
-      getTouchDistance: function (touches) {
-        const dx = touches[0].clientX - touches[1].clientX;
-        const dy = touches[0].clientY - touches[1].clientY;
-        return Math.sqrt(dx * dx + dy * dy);
-      }
-    });
+        },
+        
+        addLabels: function() {
+          const parts = [
+            { name: 'Stomach', position: { x: 0.1, y: 0.25, z: 0.1 }, audioId: 'aortaAudio' },
+            { name: 'Liver', position: { x: 3, y: 1, z: -9 }, audioId: 'ventricleAudio' }
+          ];
 
-    document.getElementById('modelContainer').setAttribute('drag-rotate', '');
-  </script>
-</body>
+          parts.forEach((part) => {
+            const label = document.createElement('a-entity');
+            label.setAttribute('text', {
+              value: part.name,
+              align: 'center',
+              width: 2,
+              color: '#000',
+              zOffset: 0.01
+            });
+            
+            const bg = document.createElement('a-plane');
+            bg.setAttribute('material', 'color: #FFF; opacity: 0.9');
+            bg.setAttribute('width', 'auto');
+            bg.setAttribute('height', 'auto');
+            bg.setAttribute('position', part.position);
+            bg.setAttribute('class', 'clickable');
+            bg.setAttribute('play-audio-on-click', `audioId: ${part.audioId}`);
+            bg.setAttribute('face-camera', '');
+            
+            bg.appendChild(label);
+            this.el.appendChild(bg);
+          });
+        }
+      });
+
+      AFRAME.registerComponent('play-audio-on-click', {
+        schema: { audioId: { type: 'string' } },
+        init: function() {
+          this.onClick = () => {
+            const audio = document.querySelector(`#${this.data.audioId}`);
+            if (audio) {
+              audio.currentTime = 0;
+              audio.play().catch(e => console.warn('Audio play failed:', e));
+            }
+          };
+          this.el.addEventListener('click', this.onClick);
+        },
+        remove: function() {
+          this.el.removeEventListener('click', this.onClick);
+        }
+      });
+
+      AFRAME.registerComponent('face-camera', {
+        tick: function() {
+          const camera = this.el.sceneEl.camera.el;
+          if (camera) {
+            this.el.object3D.lookAt(camera.object3D.position);
+          }
+        }
+      });
+
+      // Optimized drag-rotate component for mobile
+      AFRAME.registerComponent('drag-rotate', {
+        schema: {
+          speed: { default: isIOS ? 0.5 : 0.15 },
+          zoomSpeed: { default: isIOS ? 0.002 : 0.0008 },
+          panSpeed: { default: isIOS ? 0.003 : 0.0015 }
+        },
+        init: function() {
+          this.isDragging = false;
+          this.scale = 1;
+          this.pan = { x: 0, y: 0 };
+          this.rotation = { x: 0, y: 0 };
+          this.el.setAttribute('rotation', this.rotation);
+
+          const scene = this.el.sceneEl;
+          
+          // Mouse events
+          scene.addEventListener('mousedown', this.onDragStart.bind(this));
+          window.addEventListener('mouseup', this.onDragEnd.bind(this));
+          scene.addEventListener('mousemove', this.onDragMove.bind(this));
+          
+          // Touch events
+          scene.addEventListener('touchstart', this.onTouchStart.bind(this));
+          scene.addEventListener('touchend', this.onTouchEnd.bind(this));
+          scene.addEventListener('touchmove', this.onTouchMove.bind(this));
+          
+          // Wheel event
+          scene.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
+        },
+        
+        onDragStart: function(e) {
+          this.isDragging = true;
+          this.prevPos = { x: e.clientX, y: e.clientY };
+        },
+        
+        onDragMove: function(e) {
+          if (!this.isDragging) return;
+          const dx = e.clientX - this.prevPos.x;
+          const dy = e.clientY - this.prevPos.y;
+          
+          this.rotation.y -= dx * this.data.speed;
+          this.rotation.x -= dy * this.data.speed;
+          this.el.setAttribute('rotation', this.rotation);
+          
+          this.prevPos = { x: e.clientX, y: e.clientY };
+        },
+        
+        onDragEnd: function() {
+          this.isDragging = false;
+        },
+        
+        onTouchStart: function(e) {
+          if (e.touches.length === 1) {
+            this.isDragging = true;
+            this.prevPos = {
+              x: e.touches[0].clientX,
+              y: e.touches[0].clientY
+            };
+          } else if (e.touches.length === 2) {
+            this.isDragging = false;
+            this.initialPinchDistance = this.getPinchDistance(e);
+            this.initialScale = this.scale;
+            this.prevMid = this.getMidpoint(e);
+          }
+        },
+        
+        onTouchMove: function(e) {
+          if (e.touches.length === 1 && this.isDragging) {
+            const dx = e.touches[0].clientX - this.prevPos.x;
+            const dy = e.touches[0].clientY - this.prevPos.y;
+            
+            this.rotation.y -= dx * this.data.speed;
+            this.rotation.x -= dy * this.data.speed;
+            this.el.setAttribute('rotation', this.rotation);
+            
+            this.prevPos = {
+              x: e.touches[0].clientX,
+              y: e.touches[0].clientY
+            };
+          } else if (e.touches.length === 2) {
+            const newDistance = this.getPinchDistance(e);
+            const scaleChange = newDistance / this.initialPinchDistance;
+            this.scale = Math.max(0.001, Math.min(5, this.initialScale * scaleChange));
+            this.el.setAttribute('scale', `${this.scale} ${this.scale} ${this.scale}`);
+            
+            const newMid = this.getMidpoint(e);
+            const dx = (newMid.x - this.prevMid.x) * this.data.panSpeed;
+            const dy = -(newMid.y - this.prevMid.y) * this.data.panSpeed;
+            
+            this.pan.x += dx;
+            this.pan.y += dy;
+            this.el.setAttribute('position', { x: this.pan.x, y: this.pan.y, z: 0 });
+            this.prevMid = newMid;
+          }
+        },
+        
+        onTouchEnd: function() {
+          this.isDragging = false;
+        },
+        
+        onWheel: function(e) {
+          e.preventDefault();
+          this.scale += -e.deltaY * this.data.zoomSpeed;
+          this.scale = Math.max(0.001, Math.min(5, this.scale));
+          this.el.setAttribute('scale', `${this.scale} ${this.scale} ${this.scale}`);
+        },
+        
+        getPinchDistance: function(e) {
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          return Math.sqrt(dx * dx + dy * dy);
+        },
+        
+        getMidpoint: function(e) {
+          return {
+            x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+            y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+          };
+        }
+      });
+    </script>
+  </body>
 </html>
