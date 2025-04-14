@@ -14,7 +14,7 @@
         <a-asset-item id="heartGLB" src="heart.glb"></a-asset-item>
         <a-asset-item id="bodyGLB" src="body.glb"></a-asset-item>
         <audio id="aortaAudio" src="audio/aorta.mp3"></audio>
-        <audio id="liverAudio" src="audio/liver.mp3"></audio>
+        <audio id="liverAudio" src="audio/aorta.mp3"></audio>
       </a-assets>
 
       <!-- Lighting -->
@@ -24,13 +24,15 @@
       <!-- Heart Marker -->
       <a-marker id="heartMarker" type="pattern" url="heart-marker.patt" emitevents="true">
         <a-entity 
-          id="heartModel" 
-          gltf-model="#heartGLB" 
-          scale="0.5 0.5 0.5" 
-          rotation="-90 0 0"
-          interactable-model
-          load-heart-labels>
-        </a-entity>
+  id="heartModel" 
+  geometry="primitive: box; width: 1; height: 1; depth: 1" 
+  material="color: red"
+  scale="0.5 0.5 0.5"
+  rotation="-90 0 0"
+  interactable-model
+  load-heart-labels>
+</a-entity>
+
       </a-marker>
 
       <!-- Body Marker -->
