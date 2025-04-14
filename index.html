@@ -11,24 +11,29 @@
   <body>
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; cameraParametersUrl: camera_para.dat">
       <a-assets>
-        <audio id="aortaAudio" src="audio/aorta.mp3" preload="auto"></audio>
-        <audio id="ventricleAudio" src="audio/ventricle.mp3" preload="auto"></audio>
-        <a-asset-item id="heartGLB" src="body.glb"></a-asset-item>
+        <audio id="heartAudio" src="audio/aorta.mp3" preload="auto"></audio>
+        <audio id="liverAudio" src="audio/aorta.mp3" preload="auto"></audio>
+        <a-asset-item id="bodyGLB" src="body.glb"></a-asset-item>
+        <a-asset-item id="heartGLB" src="heart.glb"></a-asset-item>
       </a-assets>
 
       <!-- Lighting -->
       <a-entity light="type: ambient; color: #ffffff; intensity: 1.5"></a-entity>
       <a-entity light="type: directional; color: #ffffff; intensity: 1" position="1 2 1"></a-entity>
 
-      <!-- Marker -->
-      <a-marker preset="hiro" id="marker" emitevents="true">
-        <!-- Group for model + labels -->
-        <a-entity id="modelGroup" scale="0.03 0.03 0.03" rotation-listener zoom-listener>
-          <a-entity
-            id="heartModel"
-            gltf-model="#heartGLB"
-            add-labels-on-load
-          ></a-entity>
+      <!-- Marker 1: Body -->
+      <a-marker id="customMarker" type="pattern" preset="custom" url="marker.patt" emitevents="true">
+        <a-entity id="markerBody" gltf-model="body.glb" scale="0.05 0.05 0.05" rotation="-90 0 0" visible="false" zoom-listener rotation-listener>
+          <!-- Labels for Body -->
+          <a-text value="Liver" position="0 1 0" scale="2 2 2" color="green" class="clickable" onclick="playAudio('liverAudio')"></a-text>
+        </a-entity>
+      </a-marker>
+
+      <!-- Marker 2: Heart -->
+      <a-marker id="heartMarker" type="pattern" preset="custom" url="heart-marker.patt" emitevents="true">
+        <a-entity id="markerHeart" gltf-model="heart.glb" scale="0.5 0.5 0.5" rotation="-90 0 0" visible="false" zoom-listener rotation-listener>
+          <!-- Labels for Heart -->
+          <a-text value="Aorta" position="0 0.5 0" scale="2 2 2" color="blue" class="clickable" onclick="playAudio('heartAudio')"></a-text>
         </a-entity>
       </a-marker>
 
@@ -48,8 +53,51 @@
       AFRAME.registerComponent('add-labels', {
         init: function () {
           const parts = [
+            { name: 'Liver', position: { x: 0.3, y: 1.1, z: 0 }, audioId: 'liverAudio' },
+          ];
+
+          const parent = this.el.parentEl; // attach labels to modelGroup
+
+          parts.forEach((part) => {
+            const label = document.createElement('a-entity');
+            label.setAttribute('text', {
+              value: part.name,
+              align: 'center',
+              width: 6,
+              color: '#000',
+              baseline: 'center',
+              wrapCount: 30
+            });
+            label.setAttribute('position', part.position);
+            label.setAttribute('geometry', {
+              primitive: 'plane',
+              height: 0.7,
+              width: 3
+            });
+            label.setAttribute('material', {
+              color: '#fff',
+              opacity: 0.9
+            });
+            label.setAttribute('class', 'clickable');
+            label.setAttribute('play-audio-on-click', `audioId: ${part.audioId}`);
+
+            parent.appendChild(label);
+          });
+        }
+      });
+
+      AFRAME.registerComponent('heart-add-labels-on-load', {
+        init: function () {
+          this.el.addEventListener('model-loaded', () => {
+            this.el.setAttribute('heart-add-labels', '');
+          });
+        }
+      });
+
+      AFRAME.registerComponent('heart-add-labels', {
+        init: function () {
+          const parts = [
             { name: 'Aorta', position: { x: 0.3, y: 1.1, z: 0 }, audioId: 'aortaAudio' },
-            { name: 'Left Ventricle', position: { x: -0.5, y: 0.2, z: 0 }, audioId: 'ventricleAudio' }
           ];
 
           const parent = this.el.parentEl; // attach labels to modelGroup
