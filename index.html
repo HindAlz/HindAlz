@@ -24,15 +24,13 @@
       <!-- Heart Marker -->
       <a-marker id="heartMarker" type="pattern" url="heart-marker.patt" emitevents="true">
         <a-entity 
-  id="heartModel" 
-  geometry="primitive: box; width: 1; height: 1; depth: 1" 
-  material="color: red"
-  scale="0.5 0.5 0.5"
-  rotation="-90 0 0"
-  interactable-model
-  load-heart-labels>
-</a-entity>
-
+          id="heartModel" 
+          gltf-model="#heartGLB" 
+          scale="0.1 0.1 0.1" 
+          rotation="-90 0 0"
+          interactable-model
+          load-heart-labels>
+        </a-entity>
       </a-marker>
 
       <!-- Body Marker -->
