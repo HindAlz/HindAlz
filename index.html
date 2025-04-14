@@ -36,15 +36,19 @@
       <!-- Body Marker -->
       <a-marker id="bodyMarker" type="pattern" url="body-marker.patt" emitevents="true">
         <a-entity 
-          id="bodyModel" 
-          gltf-model="#bodyGLB" 
-          scale="0.05 0.05 0.05" 
-          rotation="-90 0 0"
-          interactable-model
-          load-body-labels>
-        </a-entity>
-      </a-marker>
+  id="bodyModel" 
+  gltf-model="#bodyGLB" 
+  scale="0.1 0.1 0.1"  
+  rotation="-90 0 0"
+  interactable-model
+  load-body-labels
+  material="color: white;">
+</a-entity>
 
+      </a-marker>
+      <a-entity light="type: ambient; intensity: 2; color: #ffffff"></a-entity>
+      <a-entity light="type: directional; intensity: 2; position=1 2 1; color=#ffffff"></a-entity>
+      
       <!-- Camera + Cursor -->
       <a-entity camera cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
     </a-scene>
