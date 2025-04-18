@@ -136,42 +136,50 @@
         }
       });
 
-      // Heart Labels
       AFRAME.registerComponent('load-heart-labels', {
-        init: function () {
-          this.el.addEventListener('model-loaded', () => {
-            const label = document.createElement('a-entity');
-            label.setAttribute('text', {
-              value: 'Aorta',
-              color: 'blue',
-              align: 'center',
-              width: 4
-            });
-            label.setAttribute('position', { x: 0.3, y: 1.1, z: 0 });
-            label.setAttribute('geometry', {
-              primitive: 'plane',
-              height: 0.5,
-              width: 2
-            });
-            label.setAttribute('material', {
-              color: 'white',
-              opacity: 0.8
-            });
-            label.setAttribute('class', 'clickable');
-            label.setAttribute('play-audio-on-click', 'audioId: aortaAudio');
-            this.el.appendChild(label);
-          });
-        }
+  init: function () {
+    this.el.addEventListener('model-loaded', () => {
+      const labels = [
+        { name: "Aorta", position: { x: 0.3, y: 1.1, z: 0 }, color: "blue", audioId: "aortaAudio" },
+        { name: "Right Ventricle", position: { x: -0.3, y: 1.0, z: 0.2 }, color: "blue", audioId: "aortaAudio" },
+      ];
+
+      labels.forEach((labelInfo) => {
+        const label = document.createElement('a-entity');
+        label.setAttribute('text', {
+          value: labelInfo.name,
+          color: labelInfo.color,
+          align: 'center',
+          width: 4
+        });
+        label.setAttribute('position', labelInfo.position);
+        label.setAttribute('geometry', {
+          primitive: 'plane',
+          height: 0.4,
+          width: 2
+        });
+        label.setAttribute('material', {
+          color: 'white',
+          opacity: 0.85
+        });
+        label.setAttribute('class', 'clickable');
+        label.setAttribute('play-audio-on-click', `audioId: ${labelInfo.audioId}`);
+        label.setAttribute('look-at', '#mainCamera');
+        this.el.appendChild(label);
       });
+    });
+  }
+});
+
 
       // Body Labels (Multiple with look-at)
 AFRAME.registerComponent('load-body-labels', {
   init: function () {
     this.el.addEventListener('model-loaded', () => {
       const labels = [
-        { name: 'Liver', pos: { x: 0.3, y: 1.1, z: 0 }, color: 'green', audioId: 'liverAudio' },
-        { name: 'Stomach', pos: { x: -0.3, y: 1.0, z: 0 }, color: 'green', audioId: 'liverAudio' },
-        { name: 'Ribcage', pos: { x: 0, y: 1.6, z: -0.2 }, color: 'green', audioId: 'liverAudio' },
+        { name: 'Liver', pos: { x: 2, y: 2, z: -9 }, color: 'green', audioId: 'liverAudio' },
+        { name: 'Stomach', pos: { x: -3, y: 0, z: -9 }, color: 'green', audioId: 'liverAudio' },
+        { name: 'Ribcage', pos: { x: 2, y: 10, z: -9 }, color: 'green', audioId: 'liverAudio' },
       ];
 
       labels.forEach(labelData => {
