@@ -41,7 +41,7 @@
   id="bodyModel" 
   gltf-model="#bodyGLB" 
   scale="0.1 0.1 0.1"  
-  rotation="-90 0 0"
+  rotation="0 0 0"
   interactable-model
   load-body-labels
   material="color: white;">
@@ -164,33 +164,43 @@
         }
       });
 
-      // Body Labels
-      AFRAME.registerComponent('load-body-labels', {
-        init: function () {
-          this.el.addEventListener('model-loaded', () => {
-            const label = document.createElement('a-entity');
-            label.setAttribute('text', {
-              value: 'Liver',
-              color: 'green',
-              align: 'center',
-              width: 4
-            });
-            label.setAttribute('position', { x: 0.3, y: 1.1, z: 0 });
-            label.setAttribute('geometry', {
-              primitive: 'plane',
-              height: 0.5,
-              width: 2
-            });
-            label.setAttribute('material', {
-              color: 'white',
-              opacity: 0.8
-            });
-            label.setAttribute('class', 'clickable');
-            label.setAttribute('play-audio-on-click', 'audioId: liverAudio');
-            this.el.appendChild(label);
-          });
-        }
+      // Body Labels (Multiple with look-at)
+AFRAME.registerComponent('load-body-labels', {
+  init: function () {
+    this.el.addEventListener('model-loaded', () => {
+      const labels = [
+        { name: 'Liver', pos: { x: 0.3, y: 1.1, z: 0 }, color: 'green', audioId: 'liverAudio' },
+        { name: 'Stomach', pos: { x: -0.3, y: 1.0, z: 0 }, color: 'green', audioId: 'liverAudio' },
+        { name: 'Ribcage', pos: { x: 0, y: 1.6, z: -0.2 }, color: 'green', audioId: 'liverAudio' },
+      ];
+
+      labels.forEach(labelData => {
+        const label = document.createElement('a-entity');
+        label.setAttribute('text', {
+          value: labelData.name,
+          color: labelData.color,
+          align: 'center',
+          width: 4
+        });
+        label.setAttribute('position', labelData.pos);
+        label.setAttribute('geometry', {
+          primitive: 'plane',
+          height: 0.5,
+          width: 2
+        });
+        label.setAttribute('material', {
+          color: 'white',
+          opacity: 0.8
+        });
+        label.setAttribute('class', 'clickable');
+        label.setAttribute('play-audio-on-click', `audioId: ${labelData.audioId}`);
+        label.setAttribute('look-at', '#mainCamera'); // Ensures the label faces the camera
+        this.el.appendChild(label);
       });
+    });
+  }
+});
+
     </script>
   </body>
 </html>
