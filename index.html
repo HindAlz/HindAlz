@@ -22,7 +22,7 @@
   <body>
     <div id="startOverlay" onclick="startExperience()">Tap to Start</div>
 
-    <!-- 🔊 Audio tags must be in body directly -->
+    <!-- 🔊 Audio -->
     <audio id="aortaAudio" src="audio/aorta.mp3" preload="auto"></audio>
     <audio id="liverAudio" src="audio/aorta.mp3" preload="auto"></audio>
 
@@ -36,7 +36,7 @@
       <a-entity light="type: ambient; color: #ffffff; intensity: 10"></a-entity>
       <a-entity light="type: directional; color: #ffffff; intensity: 10" position="1 3 2"></a-entity>
 
-      <!-- Heart Marker -->
+      <!-- Markers -->
       <a-marker id="heartMarker" type="pattern" url="heart-marker.patt" emitevents="true">
         <a-entity 
           id="heartModel" 
@@ -48,7 +48,6 @@
         </a-entity>
       </a-marker>
 
-      <!-- Body Marker -->
       <a-marker id="bodyMarker" type="pattern" url="marker.patt" emitevents="true">
         <a-entity 
           id="bodyModel" 
@@ -56,28 +55,35 @@
           scale="0.1 0.1 0.1"  
           rotation="0 0 0"
           interactable-model
-          load-body-labels
-          material="color: white;">
+          load-body-labels>
         </a-entity>
       </a-marker>
 
-      <!-- Extra lighting -->
+      <!-- Extra lights -->
       <a-entity light="type: ambient; intensity: 10; color: #ffffff"></a-entity>
       <a-entity light="type: directional; intensity: 10; position=1 2 1; color=#ffffff"></a-entity>
-      
-      <!-- Camera + Cursor -->
-      <a-entity camera cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
+
+      <!-- 📸 Camera with working click/tap cursor -->
+      <a-entity id="cameraRig">
+        <a-entity id="mainCamera" camera look-controls
+          cursor="fuse: false; rayOrigin: cursor"
+          raycaster="objects: .clickable; far: 100; interval: 100">
+          <a-entity 
+            position="0 0 -1"
+            geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+            material="color: white; shader: flat">
+          </a-entity>
+        </a-entity>
+      </a-entity>
     </a-scene>
 
     <script>
-      // ✅ Unlock audio on gesture
+      // Start overlay unlocks audio
       function startExperience() {
         document.getElementById("startOverlay").style.display = "none";
         const context = new (window.AudioContext || window.webkitAudioContext)();
         const unlock = () => {
-          if (context.state === 'suspended') {
-            context.resume();
-          }
+          if (context.state === 'suspended') context.resume();
           document.removeEventListener('touchend', unlock);
           document.removeEventListener('click', unlock);
         };
@@ -85,28 +91,27 @@
         document.addEventListener('click', unlock, false);
       }
 
+      // 🔊 Audio on Click or Tap
       AFRAME.registerComponent('play-audio-on-click', {
         schema: { audioId: { type: 'string' } },
         init: function () {
-          this.el.addEventListener('click', () => {
+          const playSound = () => {
             const audio = document.getElementById(this.data.audioId);
             if (audio) {
               audio.currentTime = 0;
-              audio.play().then(() => {
-                console.log("Audio played.");
-              }).catch(err => {
-                console.warn("Audio play error:", err);
-              });
+              audio.play().catch(e => console.warn("Audio play blocked", e));
             }
-          });
+          };
+          this.el.addEventListener('click', playSound);
+          this.el.addEventListener('touchstart', playSound);
         }
       });
 
+      // 🌀 Rotate and zoom model
       AFRAME.registerComponent('interactable-model', {
         init: function () {
           const el = this.el;
-          let isDragging = false;
-          let previousX = null;
+          let isDragging = false, previousX = null;
 
           const onStart = (e) => {
             isDragging = true;
@@ -164,54 +169,52 @@
         }
       });
 
-      
-  AFRAME.registerComponent('load-heart-labels', {
-    init: function () {
-      this.el.addEventListener('model-loaded', () => {
-        const labels = [
-          { name: "Aorta", position: { x: 1, y: 20, z: -5 }, color: "blue", audioId: "aortaAudio" },
-          { name: "Right Ventricle", position: { x: 8, y: 9, z: 6 }, color: "blue", audioId: "aortaAudio" }
-        ];
-
-        labels.forEach(info => {
-          const label = document.createElement('a-entity');
-          label.setAttribute('position', info.position);
-          label.setAttribute('geometry', 'primitive: plane; height: 1; width: 3');
-          label.setAttribute('material', 'color: white; opacity: 0.9');
-          label.setAttribute('text', `value: ${info.name}; align: center; width: 4; color: ${info.color}`);
-          label.setAttribute('class', 'clickable');
-          label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
-          label.setAttribute('look-at', '[camera]');
-          this.el.appendChild(label);
-        });
+      // 🏷️ Heart Labels
+      AFRAME.registerComponent('load-heart-labels', {
+        init: function () {
+          this.el.addEventListener('model-loaded', () => {
+            const labels = [
+              { name: "Aorta", position: { x: 1, y: 20, z: -5 }, color: "blue", audioId: "aortaAudio" },
+              { name: "Right Ventricle", position: { x: 8, y: 9, z: 6 }, color: "blue", audioId: "aortaAudio" }
+            ];
+            labels.forEach(info => {
+              const label = document.createElement('a-entity');
+              label.setAttribute('position', info.position);
+              label.setAttribute('geometry', 'primitive: box; height: 1; width: 3; depth: 0.2');
+              label.setAttribute('material', 'color: white; opacity: 0.9');
+              label.setAttribute('text', `value: ${info.name}; align: center; width: 4; color: ${info.color}`);
+              label.setAttribute('class', 'clickable');
+              label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
+              label.setAttribute('look-at', '#mainCamera');
+              this.el.appendChild(label);
+            });
+          });
+        }
       });
-    }
-  });
 
-  AFRAME.registerComponent('load-body-labels', {
-    init: function () {
-      this.el.addEventListener('model-loaded', () => {
-        const labels = [
-          { name: 'Liver', position: { x: 2, y: 2, z: -9 }, color: 'green', audioId: 'liverAudio' },
-          { name: 'Stomach', position: { x: -3, y: 0, z: -9 }, color: 'green', audioId: 'liverAudio' },
-          { name: 'Ribcage', position: { x: 2, y: 10, z: -9 }, color: 'green', audioId: 'liverAudio' }
-        ];
-
-        labels.forEach(info => {
-          const label = document.createElement('a-entity');
-          label.setAttribute('position', info.position);
-          label.setAttribute('geometry', 'primitive: plane; height: 1; width: 3');
-          label.setAttribute('material', 'color: white; opacity: 0.9');
-          label.setAttribute('text', `value: ${info.name}; align: center; width: 4; color: ${info.color}`);
-          label.setAttribute('class', 'clickable');
-          label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
-          label.setAttribute('look-at', '[camera]');
-          this.el.appendChild(label);
-        });
+      // 🏷️ Body Labels
+      AFRAME.registerComponent('load-body-labels', {
+        init: function () {
+          this.el.addEventListener('model-loaded', () => {
+            const labels = [
+              { name: 'Liver', position: { x: 2, y: 2, z: -9 }, color: 'green', audioId: 'liverAudio' },
+              { name: 'Stomach', position: { x: -3, y: 0, z: -9 }, color: 'green', audioId: 'liverAudio' },
+              { name: 'Ribcage', position: { x: 2, y: 10, z: -9 }, color: 'green', audioId: 'liverAudio' }
+            ];
+            labels.forEach(info => {
+              const label = document.createElement('a-entity');
+              label.setAttribute('position', info.position);
+              label.setAttribute('geometry', 'primitive: box; height: 1; width: 3; depth: 0.2');
+              label.setAttribute('material', 'color: white; opacity: 0.9');
+              label.setAttribute('text', `value: ${info.name}; align: center; width: 4; color: ${info.color}`);
+              label.setAttribute('class', 'clickable');
+              label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
+              label.setAttribute('look-at', '#mainCamera');
+              this.el.appendChild(label);
+            });
+          });
+        }
       });
-    }
-  });
-
     </script>
   </body>
 </html>
