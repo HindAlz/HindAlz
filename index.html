@@ -5,19 +5,66 @@
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
     <style>
-      body { margin: 0; overflow: hidden; }
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+    
       #startOverlay {
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0, 0, 0, 0.9);
+        background: linear-gradient(to bottom right, #1c1c1c, #2e2e2e);
         color: white;
-        font-size: 24px;
+        font-size: 20px;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         z-index: 9999;
+        text-align: center;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+    
+      #startOverlay h1 {
+        font-size: 32px;
+        margin-bottom: 20px;
+        color: #00ffe1;
+      }
+    
+      #startOverlay p {
+        margin: 10px 0;
+        line-height: 1.4;
+        color: #ccc;
+      }
+    
+      #startOverlay .start-button {
+        margin-top: 30px;
+        padding: 12px 30px;
+        font-size: 18px;
+        background-color: #00ffe1;
+        color: #000;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.3s ease;
+      }
+    
+      #startOverlay .start-button:hover {
+        background-color: #00d4be;
       }
     </style>
+    
+    <div id="startOverlay">
+      <h1>Welcome to Heart & Body AR</h1>
+      <p>📱 Face your phone at the marker to view the model</p>
+      <p>🔍 Pinch to zoom in and out</p>
+      <p>🌀 Rotate the model using one finger</p>
+      <p>🔊 Tap labels to hear about organs</p>
+      <button class="start-button" onclick="startExperience()">Tap to Start</button>
+    </div>
+    
   </head>
   <body>
     <div id="startOverlay" onclick="startExperience()">face phone on marker 
