@@ -147,17 +147,15 @@
       labels.forEach((labelInfo) => {
         const label = document.createElement('a-entity');
         label.setAttribute('text', {
-          value: labelInfo.name,
-          color: labelInfo.color,
-          align: 'center',
-          side: 'double',
-          width: 14,
-          transparent: true
-        });
+  value: labelInfo.name,
+  color: labelInfo.color,
+  align: 'center',
+  width: 4,
+  side: 'double',
+  transparent: true
+});
+
         label.setAttribute('position', labelInfo.position);
-
-        
-
         label.setAttribute('class', 'clickable');
         label.setAttribute('play-audio-on-click', `audioId: ${labelInfo.audioId}`);
         this.el.appendChild(label);
