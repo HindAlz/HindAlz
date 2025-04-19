@@ -166,7 +166,6 @@
         });
         label.setAttribute('class', 'clickable');
         label.setAttribute('play-audio-on-click', `audioId: ${labelInfo.audioId}`);
-        label.setAttribute('look-at', '#mainCamera');
         this.el.appendChild(label);
       });
     });
@@ -174,7 +173,6 @@
 });
 
 
-      // Body Labels (Multiple with look-at)
 AFRAME.registerComponent('load-body-labels', {
   init: function () {
     this.el.addEventListener('model-loaded', () => {
@@ -205,7 +203,6 @@ AFRAME.registerComponent('load-body-labels', {
         });
         label.setAttribute('class', 'clickable');
         label.setAttribute('play-audio-on-click', `audioId: ${labelData.audioId}`);
-        label.setAttribute('look-at', '#mainCamera'); // Ensures the label faces the camera
         this.el.appendChild(label);
       });
     });
