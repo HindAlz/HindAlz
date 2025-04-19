@@ -66,7 +66,7 @@
       <a-entity light="type: directional; intensity: 10; position=1 2 1; color=#ffffff"></a-entity>
       
       <!-- Camera + Cursor -->
-      <a-entity camera cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
+      <a-entity id="mainCamera" camera cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
     </a-scene>
 
     <script>
@@ -192,7 +192,7 @@
           label.setAttribute('text', `value: ${info.name}; align: center; width: 4; color: ${info.color}`);
           label.setAttribute('class', 'clickable');
           label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
-          label.setAttribute('look-at', '[camera]');
+          label.setAttribute('look-at', '#mainCamera');
           this.el.appendChild(label);
         });
       });
@@ -216,7 +216,7 @@
           label.setAttribute('text', `value: ${info.name}; align: center; width: 4; color: ${info.color}`);
           label.setAttribute('class', 'clickable');
           label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
-          label.setAttribute('look-at', '[camera]');
+          label.setAttribute('look-at', '#mainCamera');
           this.el.appendChild(label);
         });
       });
