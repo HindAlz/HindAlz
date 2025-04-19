@@ -20,7 +20,7 @@
     </style>
   </head>
   <body>
-    <div id="startOverlay" onclick="startExperience()">face phone on marker
+    <div id="startOverlay" onclick="startExperience()">face phone on marker 
       pinch model to zoom in and out 
       rotate model using one finger
       Tap to Start</div>
@@ -75,18 +75,26 @@
     <script>
       // ✅ Unlock audio on gesture
       function startExperience() {
-        document.getElementById("startOverlay").style.display = "none";
-        const context = new (window.AudioContext || window.webkitAudioContext)();
-        const unlock = () => {
-          if (context.state === 'suspended') {
-            context.resume();
-          }
-          document.removeEventListener('touchend', unlock);
-          document.removeEventListener('click', unlock);
-        };
-        document.addEventListener('touchend', unlock, false);
-        document.addEventListener('click', unlock, false);
-      }
+  document.getElementById("startOverlay").style.display = "none";
+  const context = new (window.AudioContext || window.webkitAudioContext)();
+  const unlock = () => {
+    if (context.state === 'suspended') {
+      context.resume();
+    }
+
+    // 👇 Play and pause once to unlock each audio element
+    const audios = document.querySelectorAll('audio');
+    audios.forEach(audio => {
+      audio.play().then(() => audio.pause()).catch(err => console.warn("Unlock play error:", err));
+    });
+
+    document.removeEventListener('touchend', unlock);
+    document.removeEventListener('click', unlock);
+  };
+  document.addEventListener('touchend', unlock, false);
+  document.addEventListener('click', unlock, false);
+}
+
 
       AFRAME.registerComponent('play-audio-on-click', {
         schema: { audioId: { type: 'string' } },
