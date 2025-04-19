@@ -55,20 +55,28 @@
         const overlay = document.getElementById('startOverlay');
         const audio = document.getElementById('liverAudio');
         overlay.style.display = 'none';
-
-        // Try to resume audio context (some browsers block it)
+    
+        // Create or resume AudioContext
         const context = new (window.AudioContext || window.webkitAudioContext)();
         const unlock = () => {
           if (context.state === 'suspended') {
-            context.resume();
+            context.resume().then(() => {
+              // Try silent play to unlock audio
+              const src = context.createBufferSource();
+              src.buffer = context.createBuffer(1, 1, 22050);
+              src.connect(context.destination);
+              src.start(0);
+            });
           }
           document.removeEventListener('click', unlock);
           document.removeEventListener('touchstart', unlock);
         };
+    
         document.addEventListener('click', unlock, false);
         document.addEventListener('touchstart', unlock, false);
       }
-
+    
+      // Custom A-Frame component for playing audio
       AFRAME.registerComponent('play-audio-on-click', {
         schema: { audioId: { type: 'string' } },
         init: function () {
@@ -76,11 +84,16 @@
             const audio = document.getElementById(this.data.audioId);
             if (audio) {
               audio.currentTime = 0;
-              audio.play().catch(err => console.log('Play error:', err));
+              audio.play().then(() => {
+                console.log('Audio playing');
+              }).catch(err => {
+                console.warn('Play error:', err);
+              });
             }
           });
         }
       });
     </script>
+    
   </body>
 </html>
