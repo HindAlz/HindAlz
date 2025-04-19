@@ -65,7 +65,6 @@
       <p>📱 Face your phone at the marker to view the model</p>
       <p>🔍 Pinch to zoom in and out</p>
       <p>🌀 Rotate the model using one finger</p>
-      <p>🔊 Tap labels to hear about organs</p>
       <button class="start-button" onclick="startExperience()">Tap to Start</button>
     </div>
 
@@ -255,7 +254,7 @@ AFRAME.registerComponent('face-camera', {
           label.setAttribute('position', info.position);
           label.setAttribute('geometry', 'primitive: plane; height: 1; width: 3');
           label.setAttribute('material', 'color: white; opacity: 0.9');
-          label.setAttribute('text', `value: ${info.name}; align: center; width: 6; height: 2; color: ${info.color}`);
+          label.setAttribute('text', `value: ${info.name}; align: center; width: 10; height: 4; color: ${info.color}`);
           label.setAttribute('class', 'clickable');
           label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
           label.setAttribute('face-camera', '');
@@ -279,7 +278,7 @@ AFRAME.registerComponent('face-camera', {
           label.setAttribute('position', info.position);
           label.setAttribute('geometry', 'primitive: plane; height: 1; width: 3');
           label.setAttribute('material', 'color: white; opacity: 0.9');
-          label.setAttribute('text', `value: ${info.name}; align: center; width: 6; height: 2; color: ${info.color}`);
+          label.setAttribute('text', `value: ${info.name}; align: center; width: 10; height: 4; color: ${info.color}`);
           label.setAttribute('class', 'clickable');
           label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
           label.setAttribute('face-camera', '');
