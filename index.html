@@ -176,13 +176,12 @@
         labels.forEach(info => {
           const label = document.createElement('a-entity');
           label.setAttribute('position', info.position);
-          label.setAttribute('geometry', 'primitive: box; height: 1; width: 3; depth: 0.2');
+          label.setAttribute('geometry', 'primitive: plane; height: 1; width: 3');
           label.setAttribute('material', 'color: white; opacity: 0.9');
           label.setAttribute('text', `value: ${info.name}; align: center; width: 4; color: ${info.color}`);
           label.setAttribute('class', 'clickable');
           label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
-          label.setAttribute('look-at', '#camera');
-          label.setAttribute('scale', '5 5 5'); // or any value to make it clickable enough
+          label.setAttribute('look-at', '[camera]');
           this.el.appendChild(label);
         });
       });
@@ -201,13 +200,12 @@
         labels.forEach(info => {
           const label = document.createElement('a-entity');
           label.setAttribute('position', info.position);
-          label.setAttribute('geometry', 'primitive: box; height: 1; width: 3; depth: 0.2');
+          label.setAttribute('geometry', 'primitive: plane; height: 1; width: 3');
           label.setAttribute('material', 'color: white; opacity: 0.9');
           label.setAttribute('text', `value: ${info.name}; align: center; width: 4; color: ${info.color}`);
           label.setAttribute('class', 'clickable');
           label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
-          label.setAttribute('look-at', '#camera');
-          label.setAttribute('scale', '5 5 5'); // or any value to make it clickable enough
+          label.setAttribute('look-at', '[camera]');
           this.el.appendChild(label);
         });
       });
