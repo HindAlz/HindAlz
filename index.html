@@ -136,78 +136,31 @@
         }
       });
 
-      AFRAME.registerComponent('load-heart-labels', {
-  init: function () {
-    this.el.addEventListener('model-loaded', () => {
-      const labels = [
-        { name: "Aorta", position: { x: 1, y: 20, z: -5 }, color: "blue", audioId: "aortaAudio" },
-        { name: "Right Ventricle", position: { x: 8, y: 9, z: 6 }, color: "blue", audioId: "aortaAudio" },
-      ];
-
-      labels.forEach((labelInfo) => {
-        const label = document.createElement('a-entity');
-        label.setAttribute('text', {
-          value: labelInfo.name,
-          color: labelInfo.color,
-          align: 'center',
-          width: 4
-        });
-        label.setAttribute('position', labelInfo.position);
-        label.setAttribute('rotation', '0 180 0'); 
-
-        label.setAttribute('geometry', {
-          primitive: 'plane',
-          height: 0.4,
-          width: 2
-        });
-        label.setAttribute('material', {
-          color: 'white',
-          opacity: 0.85
-        });
-        label.setAttribute('class', 'clickable');
-        label.setAttribute('play-audio-on-click', `audioId: ${labelInfo.audioId}`);
-        this.el.appendChild(label);
-      });
-    });
-  }
+      label.setAttribute('text', {
+  value: labelInfo.name,
+  color: labelInfo.color,
+  align: 'center',
+  width: 6 // Increased from 4
+});
+label.setAttribute('geometry', {
+  primitive: 'plane',
+  height: 0.8, // Increased from 0.4
+  width: 3     // Increased from 2
 });
 
 
-AFRAME.registerComponent('load-body-labels', {
-  init: function () {
-    this.el.addEventListener('model-loaded', () => {
-      const labels = [
-        { name: 'Liver', pos: { x: 2, y: 2, z: -9 }, color: 'green', audioId: 'liverAudio' },
-        { name: 'Stomach', pos: { x: -3, y: 0, z: -9 }, color: 'green', audioId: 'liverAudio' },
-        { name: 'Ribcage', pos: { x: 2, y: 10, z: -9 }, color: 'green', audioId: 'liverAudio' },
-      ];
-
-      labels.forEach(labelData => {
-        const label = document.createElement('a-entity');
-        label.setAttribute('text', {
-          value: labelData.name,
-          color: labelData.color,
-          align: 'center',
-          width: 4
-        });
-        label.setAttribute('position', labelData.pos);
-        label.setAttribute('rotation', '0 180 0'); 
-        label.setAttribute('geometry', {
-          primitive: 'plane',
-          height: 0.5,
-          width: 2
-        });
-        label.setAttribute('material', {
-          color: 'white',
-          opacity: 0.8
-        });
-        label.setAttribute('class', 'clickable');
-        label.setAttribute('play-audio-on-click', `audioId: ${labelData.audioId}`);
-        this.el.appendChild(label);
-      });
-    });
-  }
+label.setAttribute('text', {
+  value: labelData.name,
+  color: labelData.color,
+  align: 'center',
+  width: 6 // Increased from 4
 });
+label.setAttribute('geometry', {
+  primitive: 'plane',
+  height: 0.8, // Increased from 0.5
+  width: 3     // Increased from 2
+});
+
 
     </script>
   </body>
