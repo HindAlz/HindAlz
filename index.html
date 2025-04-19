@@ -2,54 +2,71 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>AR.js Audio Label Test</title>
+    <title>AR.js Test - Audio + Label</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.2/aframe/build/aframe-ar.min.js"></script>
-    <script>
-      AFRAME.registerComponent('play-audio-on-click', {
-        schema: { audioId: { type: 'string' } },
-        init: function () {
-          this.el.addEventListener('click', () => {
-            console.log(`Clicked on: ${this.data.audioId}`);
-            const audio = document.getElementById(this.data.audioId);
-            if (audio) {
-              audio.play().then(() => {
-                console.log("Audio played.");
-              }).catch(err => {
-                console.warn("Play error:", err);
-              });
-            } else {
-              console.warn("Audio not found");
-            }
-          });
-        }
-      });
-    </script>
+    <style>
+      #startOverlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: black;
+        color: white;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+      }
+    </style>
   </head>
-
-  <body style="margin: 0; overflow: hidden;">
+  <body>
     <!-- Audio -->
     <audio id="liverAudio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
 
-    <a-scene embedded arjs>
+    <!-- Start Overlay -->
+    <div id="startOverlay" onclick="startExperience()">Tap to Start</div>
+
+    <!-- A-Frame Scene -->
+    <a-scene embedded arjs="sourceType: webcam;">
       <a-marker preset="hiro">
-        <a-entity position="0 0.5 0">
+        <a-entity position="0 1 0">
           <a-plane
-            height="1"
-            width="4"
-            material="opacity: 0.001; transparent: true"
-            play-audio-on-click="audioId: liverAudio"
-          >
-            <a-entity
-              text="value: Liver; align: center; width: 6; color: green; side: double"
+            class="clickable"
+            material="opacity: 0; transparent: true"
+            height="1" width="4"
+            play-audio-on-click="audioId: liverAudio">
+            
+            <a-entity 
+              text="value: Liver; align: center; width: 6; color: green;"
               position="0 0 0.01"
-              look-at="[camera]"
-            ></a-entity>
+              look-at="[camera]">
+            </a-entity>
           </a-plane>
         </a-entity>
       </a-marker>
 
       <a-entity camera></a-entity>
     </a-scene>
+
+    <!-- Audio-on-click Component -->
+    <script>
+      AFRAME.registerComponent('play-audio-on-click', {
+        schema: { audioId: { type: 'string' } },
+        init: function () {
+          this.el.addEventListener('click', () => {
+            const audio = document.getElementById(this.data.audioId);
+            if (audio) audio.play();
+          });
+        }
+      });
+
+      function startExperience() {
+        document.getElementById('startOverlay').style.display = 'none';
+        // Resume audio context for mobile
+        const audio = document.getElementById('liverAudio');
+        if (audio) audio.play().then(() => audio.pause());
+      }
+    </script>
   </body>
 </html>
