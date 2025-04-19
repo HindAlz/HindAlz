@@ -173,28 +173,24 @@
       labels.forEach(labelData => {
         const wrapper = document.createElement('a-entity');
         wrapper.setAttribute('position', labelData.pos);
-        wrapper.setAttribute('class', 'clickable'); // Only clickable on the wrapper
+        wrapper.setAttribute('class', 'clickable');
         wrapper.setAttribute('play-audio-on-click', `audioId: ${labelData.audioId}`);
         wrapper.setAttribute('look-at', '[camera]');
+
+        const plane = document.createElement('a-plane');
+        plane.setAttribute('height', 1);
+        plane.setAttribute('width', 4);
+        plane.setAttribute('material', 'opacity: 0.001; transparent: true');
 
         const text = document.createElement('a-entity');
         text.setAttribute('text', {
           value: labelData.name,
-          color: labelData.color,
           align: 'center',
+          color: labelData.color,
           width: 8,
-          side: 'double',
-          transparent: true
+          side: 'double'
         });
         text.setAttribute('position', '0 0 0.01');
-
-        // Optional: Plane hitbox (just for easier clicking), no class on it
-        const plane = document.createElement('a-plane');
-        plane.setAttribute('width', 4);
-        plane.setAttribute('height', 1);
-        plane.setAttribute('position', '0 0 0');
-        plane.setAttribute('material', 'opacity: 0; transparent: true'); // Click-through
-        plane.setAttribute('visible', 'true');
 
         wrapper.appendChild(plane);
         wrapper.appendChild(text);
@@ -203,6 +199,7 @@
     });
   }
 });
+
 
     </script>
   </body>
