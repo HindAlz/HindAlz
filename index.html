@@ -156,44 +156,48 @@
       });
 
       AFRAME.registerComponent('load-body-labels', {
-        init: function () {
-          this.el.addEventListener('model-loaded', () => {
-            const labels = [
-              { name: 'Liver', pos: { x: 2, y: 2, z: -9 }, color: 'green', audioId: 'liverAudio' },
-              { name: 'Stomach', pos: { x: -3, y: 0, z: -9 }, color: 'green', audioId: 'liverAudio' },
-              { name: 'Ribcage', pos: { x: 2, y: 10, z: -9 }, color: 'green', audioId: 'liverAudio' },
-            ];
+  init: function () {
+    this.el.addEventListener('model-loaded', () => {
+      const labels = [
+        { name: 'Liver', pos: { x: 2, y: 2, z: -9 }, color: 'green', audioId: 'liverAudio' },
+        { name: 'Stomach', pos: { x: -3, y: 0, z: -9 }, color: 'green', audioId: 'liverAudio' },
+        { name: 'Ribcage', pos: { x: 2, y: 10, z: -9 }, color: 'green', audioId: 'liverAudio' },
+      ];
 
-            labels.forEach(labelData => {
-              const wrapper = document.createElement('a-entity');
-              wrapper.setAttribute('position', labelData.pos);
-              wrapper.setAttribute('class', 'clickable');
-              wrapper.setAttribute('play-audio-on-click', `audioId: ${labelData.audioId}`);
-              wrapper.setAttribute('look-at', '[camera]');
+      labels.forEach(labelData => {
+        const wrapper = document.createElement('a-entity');
+        wrapper.setAttribute('position', labelData.pos);
+        wrapper.setAttribute('class', 'clickable'); // Only clickable on the wrapper
+        wrapper.setAttribute('play-audio-on-click', `audioId: ${labelData.audioId}`);
+        wrapper.setAttribute('look-at', '[camera]');
 
-              const text = document.createElement('a-entity');
-              text.setAttribute('text', {
-                value: labelData.name,
-                color: labelData.color,
-                align: 'center',
-                width: 8,
-                side: 'double',
-                transparent: true
-              });
-              text.setAttribute('position', '0 0 0.01');
+        const text = document.createElement('a-entity');
+        text.setAttribute('text', {
+          value: labelData.name,
+          color: labelData.color,
+          align: 'center',
+          width: 8,
+          side: 'double',
+          transparent: true
+        });
+        text.setAttribute('position', '0 0 0.01');
 
-              const plane = document.createElement('a-plane');
-              plane.setAttribute('width', 4);
-              plane.setAttribute('height', 1);
-              plane.setAttribute('material', 'color: white; opacity: 0; transparent: true');
+        // Optional: Plane hitbox (just for easier clicking), no class on it
+        const plane = document.createElement('a-plane');
+        plane.setAttribute('width', 4);
+        plane.setAttribute('height', 1);
+        plane.setAttribute('position', '0 0 0');
+        plane.setAttribute('material', 'opacity: 0; transparent: true'); // Click-through
+        plane.setAttribute('visible', 'true');
 
-              wrapper.appendChild(plane);
-              wrapper.appendChild(text);
-              this.el.appendChild(wrapper);
-            });
-          });
-        }
+        wrapper.appendChild(plane);
+        wrapper.appendChild(text);
+        this.el.appendChild(wrapper);
       });
+    });
+  }
+});
+
     </script>
   </body>
 </html>
