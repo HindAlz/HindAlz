@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" />
-    <title>AR.js Audio + Facing Label</title>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.2/aframe/build/aframe-ar.min.js"></script>
-    <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+    <title>Minimal AR Audio Test</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
     <style>
       #startOverlay {
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         background: rgba(0, 0, 0, 0.9);
         color: white;
         font-size: 24px;
@@ -22,61 +22,28 @@
     </style>
   </head>
   <body>
-    <!-- Audio -->
-    <audio id="liverAudio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" preload="auto"></audio>
-
-    <!-- Start Overlay -->
+    <!-- Start overlay -->
     <div id="startOverlay" onclick="startExperience()">Tap to Start</div>
 
-    <!-- A-Frame Scene -->
-    <a-scene embedded arjs>
-      <a-marker preset="hiro">
-        <a-entity position="0 1 0">
-          <!-- Transparent clickable plane -->
-          <a-plane 
-            color="#000000" opacity="0" height="1" width="3"
-            play-audio-on-click="audioId: liverAudio">
-            
-            <!-- Visible Label -->
-            <a-entity 
-              text="value: Liver; align: center; width: 6; color: green;"
-              position="0 0 0.01"
-              look-at="[camera]">
-            </a-entity>
-          </a-plane>
-        </a-entity>
-      </a-marker>
-      <a-entity id="camera" camera></a-entity>
-    </a-scene>
-
+    <!-- Audio element -->
+    <audio id="liverAudio" src="audio/aorta.mp3" preload="auto"></audio>
     <script>
-      // Allow audio playback on mobile
+      // Unlock audio on first user gesture
       function startExperience() {
-        const overlay = document.getElementById('startOverlay');
-        const audio = document.getElementById('liverAudio');
-        overlay.style.display = 'none';
-    
-        // Create or resume AudioContext
+        document.getElementById("startOverlay").style.display = "none";
+
         const context = new (window.AudioContext || window.webkitAudioContext)();
         const unlock = () => {
           if (context.state === 'suspended') {
-            context.resume().then(() => {
-              // Try silent play to unlock audio
-              const src = context.createBufferSource();
-              src.buffer = context.createBuffer(1, 1, 22050);
-              src.connect(context.destination);
-              src.start(0);
-            });
+            context.resume();
           }
+          document.removeEventListener('touchend', unlock);
           document.removeEventListener('click', unlock);
-          document.removeEventListener('touchstart', unlock);
         };
-    
+        document.addEventListener('touchend', unlock, false);
         document.addEventListener('click', unlock, false);
-        document.addEventListener('touchstart', unlock, false);
       }
-    
-      // Custom A-Frame component for playing audio
+
       AFRAME.registerComponent('play-audio-on-click', {
         schema: { audioId: { type: 'string' } },
         init: function () {
@@ -84,16 +51,29 @@
             const audio = document.getElementById(this.data.audioId);
             if (audio) {
               audio.currentTime = 0;
-              audio.play().then(() => {
-                console.log('Audio playing');
-              }).catch(err => {
-                console.warn('Play error:', err);
-              });
+              audio.play().catch((err) => console.warn("Play error:", err));
             }
           });
         }
       });
     </script>
+    <!-- Scene -->
+    <a-scene embedded arjs>
+      <a-marker preset="hiro">
+        <!-- Simple clickable label -->
+        <a-entity id="liverLabel"
+                  position="0 0.5 0"
+                  text="value: Liver; align: center; width: 4; color: green"
+                  geometry="primitive: plane; height: 1; width: 3"
+                  material="color: white; opacity: 0.9"
+                  class="clickable"
+                  play-audio-on-click="audioId: liverAudio">
+        </a-entity>
+      </a-marker>
+
+      <a-entity camera cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
+    </a-scene>
+
     
   </body>
 </html>
