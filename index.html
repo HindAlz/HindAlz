@@ -153,17 +153,19 @@
           width: 4
         });
         label.setAttribute('position', labelInfo.position);
-        label.setAttribute('rotation', '0 180 0'); 
 
         label.setAttribute('geometry', {
           primitive: 'plane',
-          height: 0.4,
-          width: 2
+          height: 0.8,
+          width: 3
         });
         label.setAttribute('material', {
-          color: 'white',
-          opacity: 0.85
-        });
+  color: 'white',
+  opacity: 0.85,
+  side: 'double',
+  transparent: true
+});
+
         label.setAttribute('class', 'clickable');
         label.setAttribute('play-audio-on-click', `audioId: ${labelInfo.audioId}`);
         this.el.appendChild(label);
