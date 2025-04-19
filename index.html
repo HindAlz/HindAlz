@@ -150,21 +150,13 @@
           value: labelInfo.name,
           color: labelInfo.color,
           align: 'center',
-          width: 4
+          side: 'double',
+          width: 4,
+          transparent: true
         });
         label.setAttribute('position', labelInfo.position);
 
-        label.setAttribute('geometry', {
-          primitive: 'plane',
-          height: 0.8,
-          width: 3
-        });
-        label.setAttribute('material', {
-  color: 'white',
-  opacity: 0.85,
-  side: 'double',
-  transparent: true
-});
+        
 
         label.setAttribute('class', 'clickable');
         label.setAttribute('play-audio-on-click', `audioId: ${labelInfo.audioId}`);
