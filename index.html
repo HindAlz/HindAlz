@@ -19,8 +19,6 @@
 
       <!-- Lighting -->
       <a-entity light="type: ambient; color: #ffffff; intensity: 10"></a-entity>
-
-      <!-- Directional light to mimic sunlight -->
       <a-entity light="type: directional; color: #ffffff; intensity: 10" position="1 3 2"></a-entity>
 
       <!-- Heart Marker -->
@@ -38,16 +36,16 @@
       <!-- Body Marker -->
       <a-marker id="bodyMarker" type="pattern" url="marker.patt" emitevents="true">
         <a-entity 
-  id="bodyModel" 
-  gltf-model="#bodyGLB" 
-  scale="0.1 0.1 0.1"  
-  rotation="0 0 0"
-  interactable-model
-  load-body-labels
-  material="color: white;">
-</a-entity>
-
+          id="bodyModel" 
+          gltf-model="#bodyGLB" 
+          scale="0.1 0.1 0.1"  
+          rotation="0 0 0"
+          interactable-model
+          load-body-labels
+          material="color: white;">
+        </a-entity>
       </a-marker>
+
       <a-entity light="type: ambient; intensity: 10; color: #ffffff"></a-entity>
       <a-entity light="type: directional; intensity: 10; position=1 2 1; color=#ffffff"></a-entity>
       
@@ -56,7 +54,6 @@
     </a-scene>
 
     <script>
-      // Add click-to-play audio behavior
       AFRAME.registerComponent('play-audio-on-click', {
         schema: { audioId: { type: 'string' } },
         init: function () {
@@ -69,14 +66,12 @@
         }
       });
 
-      // Zoom and rotate interaction
       AFRAME.registerComponent('interactable-model', {
         init: function () {
           const el = this.el;
           let isDragging = false;
           let previousX = null;
 
-          // Rotate
           const onStart = (e) => {
             isDragging = true;
             previousX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -86,7 +81,6 @@
             const currentX = e.touches ? e.touches[0].clientX : e.clientX;
             const deltaX = currentX - previousX;
             previousX = currentX;
-
             const rotation = el.getAttribute('rotation');
             rotation.y += deltaX * 0.5;
             el.setAttribute('rotation', rotation);
@@ -100,7 +94,6 @@
           document.addEventListener('touchmove', onMove);
           document.addEventListener('touchend', onEnd);
 
-          // Zoom
           let initialDistance = null;
           window.addEventListener('wheel', (e) => {
             const scale = el.getAttribute('scale');
@@ -117,7 +110,6 @@
               const dx = e.touches[0].clientX - e.touches[1].clientX;
               const dy = e.touches[0].clientY - e.touches[1].clientY;
               const distance = Math.sqrt(dx * dx + dy * dy);
-
               if (initialDistance === null) {
                 initialDistance = distance;
               } else {
@@ -137,70 +129,71 @@
       });
 
       AFRAME.registerComponent('load-heart-labels', {
-  init: function () {
-    this.el.addEventListener('model-loaded', () => {
-      const labels = [
-        { name: "Aorta", position: { x: 1, y: 20, z: -5 }, color: "blue", audioId: "aortaAudio" },
-        { name: "Right Ventricle", position: { x: 8, y: 9, z: 6 }, color: "blue", audioId: "aortaAudio" },
-      ];
+        init: function () {
+          this.el.addEventListener('model-loaded', () => {
+            const labels = [
+              { name: "Aorta", position: { x: 1, y: 20, z: -5 }, color: "blue", audioId: "aortaAudio" },
+              { name: "Right Ventricle", position: { x: 8, y: 9, z: 6 }, color: "blue", audioId: "aortaAudio" },
+            ];
 
-      labels.forEach((labelInfo) => {
-        const label = document.createElement('a-entity');
-        label.setAttribute('text', {
-  value: labelInfo.name,
-  color: labelInfo.color,
-  align: 'center',
-  width: 14,
-  side: 'double',
-  transparent: true
-});
-
-        label.setAttribute('position', labelInfo.position);
-        label.setAttribute('class', 'clickable');
-        label.setAttribute('play-audio-on-click', `audioId: ${labelInfo.audioId}`);
-        this.el.appendChild(label);
+            labels.forEach((labelInfo) => {
+              const label = document.createElement('a-entity');
+              label.setAttribute('text', {
+                value: labelInfo.name,
+                color: labelInfo.color,
+                align: 'center',
+                width: 14,
+                side: 'double',
+                transparent: true
+              });
+              label.setAttribute('position', labelInfo.position);
+              label.setAttribute('class', 'clickable');
+              label.setAttribute('play-audio-on-click', `audioId: ${labelInfo.audioId}`);
+              this.el.appendChild(label);
+            });
+          });
+        }
       });
-    });
-  }
-});
 
+      AFRAME.registerComponent('load-body-labels', {
+        init: function () {
+          this.el.addEventListener('model-loaded', () => {
+            const labels = [
+              { name: 'Liver', pos: { x: 2, y: 2, z: -9 }, color: 'green', audioId: 'liverAudio' },
+              { name: 'Stomach', pos: { x: -3, y: 0, z: -9 }, color: 'green', audioId: 'liverAudio' },
+              { name: 'Ribcage', pos: { x: 2, y: 10, z: -9 }, color: 'green', audioId: 'liverAudio' },
+            ];
 
-AFRAME.registerComponent('load-body-labels', {
-  init: function () {
-    this.el.addEventListener('model-loaded', () => {
-      const labels = [
-        { name: 'Liver', pos: { x: 2, y: 2, z: -9 }, color: 'green', audioId: 'liverAudio' },
-        { name: 'Stomach', pos: { x: -3, y: 0, z: -9 }, color: 'green', audioId: 'liverAudio' },
-        { name: 'Ribcage', pos: { x: 2, y: 10, z: -9 }, color: 'green', audioId: 'liverAudio' },
-      ];
+            labels.forEach(labelData => {
+              const wrapper = document.createElement('a-entity');
+              wrapper.setAttribute('position', labelData.pos);
+              wrapper.setAttribute('class', 'clickable');
+              wrapper.setAttribute('play-audio-on-click', `audioId: ${labelData.audioId}`);
+              wrapper.setAttribute('look-at', '[camera]');
 
-      labels.forEach(labelData => {
-        const label = document.createElement('a-entity');
-        label.setAttribute('text', {
-          value: labelData.name,
-          color: labelData.color,
-          align: 'center',
-          width: 8
-        });
-        label.setAttribute('position', labelData.pos);
-        label.setAttribute('rotation', '0 180 0'); 
-        label.setAttribute('geometry', {
-          primitive: 'plane',
-          height: 1,
-          width: 4
-        });
-        label.setAttribute('material', {
-          color: 'white',
-          opacity: 0.8
-        });
-        label.setAttribute('class', 'clickable');
-        label.setAttribute('play-audio-on-click', `audioId: ${labelData.audioId}`);
-        this.el.appendChild(label);
+              const text = document.createElement('a-entity');
+              text.setAttribute('text', {
+                value: labelData.name,
+                color: labelData.color,
+                align: 'center',
+                width: 8,
+                side: 'double',
+                transparent: true
+              });
+              text.setAttribute('position', '0 0 0.01');
+
+              const plane = document.createElement('a-plane');
+              plane.setAttribute('width', 4);
+              plane.setAttribute('height', 1);
+              plane.setAttribute('material', 'color: white; opacity: 0; transparent: true');
+
+              wrapper.appendChild(plane);
+              wrapper.appendChild(text);
+              this.el.appendChild(wrapper);
+            });
+          });
+        }
       });
-    });
-  }
-});
-
     </script>
   </body>
 </html>
