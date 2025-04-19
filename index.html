@@ -251,14 +251,23 @@ AFRAME.registerComponent('face-camera', {
 
         labels.forEach(info => {
           const label = document.createElement('a-entity');
-          label.setAttribute('position', info.position);
-          label.setAttribute('geometry', 'primitive: plane; height: 1; width: 3');
-          label.setAttribute('material', 'color: white; opacity: 0.9');
-          label.setAttribute('text', `value: ${info.name}; align: center; width: 10; height: 4; color: ${info.color}`);
-          label.setAttribute('class', 'clickable');
-          label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
-          label.setAttribute('face-camera', '');
-          this.el.appendChild(label);
+label.setAttribute('position', info.position);
+label.setAttribute('geometry', 'primitive: plane; height: 1.5; width: 4.5');
+label.setAttribute('material', 'color: white; opacity: 0.9');
+label.setAttribute('class', 'clickable');
+label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
+label.setAttribute('face-camera', '');
+
+// Create the text entity slightly in front of the panel
+const textEntity = document.createElement('a-entity');
+textEntity.setAttribute('position', '0 0 0.01'); // small Z offset
+textEntity.setAttribute('text', `value: ${info.name}; align: center; width: 10; height: 4; color: ${info.color}`);
+textEntity.setAttribute('face-camera', '');
+
+// Add text to the label panel
+label.appendChild(textEntity);
+this.el.appendChild(label);
+
         });
       });
     }
@@ -275,14 +284,23 @@ AFRAME.registerComponent('face-camera', {
 
         labels.forEach(info => {
           const label = document.createElement('a-entity');
-          label.setAttribute('position', info.position);
-          label.setAttribute('geometry', 'primitive: plane; height: 1; width: 3');
-          label.setAttribute('material', 'color: white; opacity: 0.9');
-          label.setAttribute('text', `value: ${info.name}; align: center; width: 10; height: 4; color: ${info.color}`);
-          label.setAttribute('class', 'clickable');
-          label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
-          label.setAttribute('face-camera', '');
-          this.el.appendChild(label);
+label.setAttribute('position', info.position);
+label.setAttribute('geometry', 'primitive: plane; height: 1.5; width: 4.5');
+label.setAttribute('material', 'color: white; opacity: 0.9');
+label.setAttribute('class', 'clickable');
+label.setAttribute('play-audio-on-click', `audioId: ${info.audioId}`);
+label.setAttribute('face-camera', '');
+
+// Create the text entity slightly in front of the panel
+const textEntity = document.createElement('a-entity');
+textEntity.setAttribute('position', '0 0 0.01'); // small Z offset
+textEntity.setAttribute('text', `value: ${info.name}; align: center; width: 10; height: 4; color: ${info.color}`);
+textEntity.setAttribute('face-camera', '');
+
+// Add text to the label panel
+label.appendChild(textEntity);
+this.el.appendChild(label);
+
         });
       });
     }
