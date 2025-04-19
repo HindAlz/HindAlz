@@ -103,66 +103,77 @@
       });
 
       AFRAME.registerComponent('interactable-model', {
-        init: function () {
-          const el = this.el;
-          let isDragging = false;
-          let previousX = null;
+  schema: {
+    autoRotateSpeed: { type: 'number', default: 0.3 }
+  },
+  init: function () {
+    const el = this.el;
+    this.isDragging = false;
+    this.previousX = null;
 
-          const onStart = (e) => {
-            isDragging = true;
-            previousX = e.touches ? e.touches[0].clientX : e.clientX;
-          };
-          const onMove = (e) => {
-            if (!isDragging) return;
-            const currentX = e.touches ? e.touches[0].clientX : e.clientX;
-            const deltaX = currentX - previousX;
-            previousX = currentX;
-            const rotation = el.getAttribute('rotation');
-            rotation.y += deltaX * 0.5;
-            el.setAttribute('rotation', rotation);
-          };
-          const onEnd = () => { isDragging = false; };
+    const onStart = (e) => {
+      this.isDragging = true;
+      this.previousX = e.touches ? e.touches[0].clientX : e.clientX;
+    };
+    const onMove = (e) => {
+      if (!this.isDragging) return;
+      const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+      const deltaX = currentX - this.previousX;
+      this.previousX = currentX;
+      const rotation = el.getAttribute('rotation');
+      rotation.y += deltaX * 0.5;
+      el.setAttribute('rotation', rotation);
+    };
+    const onEnd = () => { this.isDragging = false; };
 
-          document.addEventListener('mousedown', onStart);
-          document.addEventListener('mousemove', onMove);
-          document.addEventListener('mouseup', onEnd);
-          document.addEventListener('touchstart', onStart);
-          document.addEventListener('touchmove', onMove);
-          document.addEventListener('touchend', onEnd);
+    document.addEventListener('mousedown', onStart);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchstart', onStart);
+    document.addEventListener('touchmove', onMove);
+    document.addEventListener('touchend', onEnd);
 
-          let initialDistance = null;
-          window.addEventListener('wheel', (e) => {
-            const scale = el.getAttribute('scale');
-            const zoom = 1 + (e.deltaY > 0 ? -0.1 : 0.1);
-            el.setAttribute('scale', {
-              x: Math.max(0.01, scale.x * zoom),
-              y: Math.max(0.01, scale.y * zoom),
-              z: Math.max(0.01, scale.z * zoom)
-            });
-          });
-
-          document.addEventListener('touchmove', function (e) {
-            if (e.touches.length === 2) {
-              const dx = e.touches[0].clientX - e.touches[1].clientX;
-              const dy = e.touches[0].clientY - e.touches[1].clientY;
-              const distance = Math.sqrt(dx * dx + dy * dy);
-              if (initialDistance === null) {
-                initialDistance = distance;
-              } else {
-                const scale = el.getAttribute('scale');
-                const zoom = distance / initialDistance;
-                el.setAttribute('scale', {
-                  x: Math.max(0.01, scale.x * zoom),
-                  y: Math.max(0.01, scale.y * zoom),
-                  z: Math.max(0.01, scale.z * zoom)
-                });
-              }
-            }
-          });
-
-          document.addEventListener('touchend', () => initialDistance = null);
-        }
+    // Mouse wheel zoom
+    window.addEventListener('wheel', (e) => {
+      const scale = el.getAttribute('scale');
+      const zoom = 1 + (e.deltaY > 0 ? -0.1 : 0.1);
+      el.setAttribute('scale', {
+        x: Math.max(0.01, scale.x * zoom),
+        y: Math.max(0.01, scale.y * zoom),
+        z: Math.max(0.01, scale.z * zoom)
       });
+    });
+
+    // Pinch zoom
+    let initialDistance = null;
+    document.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (initialDistance === null) {
+          initialDistance = distance;
+        } else {
+          const scale = el.getAttribute('scale');
+          const zoom = distance / initialDistance;
+          el.setAttribute('scale', {
+            x: Math.max(0.01, scale.x * zoom),
+            y: Math.max(0.01, scale.y * zoom),
+            z: Math.max(0.01, scale.z * zoom)
+          });
+        }
+      }
+    });
+    document.addEventListener('touchend', () => initialDistance = null);
+  },
+  tick: function (time, timeDelta) {
+    if (this.isDragging) return;
+    const rotation = this.el.getAttribute('rotation');
+    rotation.y += this.data.autoRotateSpeed;
+    this.el.setAttribute('rotation', rotation);
+  }
+});
+
 
       
   AFRAME.registerComponent('load-heart-labels', {
