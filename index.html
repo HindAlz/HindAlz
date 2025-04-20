@@ -130,8 +130,16 @@
     // 👇 Play and pause once to unlock each audio element
     const audios = document.querySelectorAll('audio');
     audios.forEach(audio => {
-      audio.play().then(() => audio.pause()).catch(err => console.warn("Unlock play error:", err));
+  if (audio.paused) {
+    audio.play().then(() => {
+      audio.pause();
+      audio.currentTime = 0;
+    }).catch(err => {
+      console.warn('Autoplay unlock failed:', err);
     });
+  }
+});
+
 
     document.removeEventListener('touchend', unlock);
     document.removeEventListener('click', unlock);
