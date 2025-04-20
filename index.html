@@ -61,10 +61,11 @@
   </head>
   <body>
     <div id="startOverlay">
-      <h1>Welcome to Heart & Body AR</h1>
+      <h1>Welcome to Anatomy AR</h1>
       <p>📱 Face your phone at the marker to view the model</p>
       <p>🔍 Pinch to zoom in and out</p>
       <p>🌀 Rotate the model using one finger</p>
+      <p>🔊 Tap on organ labels to hear audio</p>
       <button class="start-button" onclick="startExperience()">Tap to Start</button>
     </div>
 
@@ -118,7 +119,6 @@
     </a-scene>
 
     <script>
-      // ✅ Unlock audio on gesture
       function startExperience() {
   document.getElementById("startOverlay").style.display = "none";
   const context = new (window.AudioContext || window.webkitAudioContext)();
@@ -127,7 +127,6 @@
       context.resume();
     }
 
-    // 👇 Play and pause once to unlock each audio element
     const audios = document.querySelectorAll('audio');
     
 
