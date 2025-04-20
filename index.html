@@ -61,7 +61,7 @@
   </head>
   <body>
     <div id="startOverlay">
-      <h1>fWelcome to Heart & Body AR</h1>
+      <h1>Welcome to Heart & Body AR</h1>
       <p>📱 Face your phone at the marker to view the model</p>
       <p>🔍 Pinch to zoom in and out</p>
       <p>🌀 Rotate the model using one finger</p>
@@ -120,34 +120,36 @@
     <script>
       // ✅ Unlock audio on gesture
       function startExperience() {
-  document.getElementById("startOverlay").style.display = "none";
-  const context = new (window.AudioContext || window.webkitAudioContext)();
-  const unlock = () => {
-    if (context.state === 'suspended') {
-      context.resume();
-    }
-
-    // 👇 Play and pause once to unlock each audio element
-    const audios = document.querySelectorAll('audio');
-    audios.forEach(audio => {
-  if (audio.paused) {
-    audio.play().then(() => {
-      audio.pause();
-      audio.currentTime = 0;
-    }).catch(err => {
-      console.warn('Autoplay unlock failed:', err);
-    });
-  }
-});
-
-
-    document.removeEventListener('touchend', unlock);
-    document.removeEventListener('click', unlock);
-  };
-  document.addEventListener('touchend', unlock, false);
-  document.addEventListener('click', unlock, false);
-}
-
+        document.getElementById("startOverlay").style.display = "none";
+    
+        const context = new (window.AudioContext || window.webkitAudioContext)();
+    
+        const unlock = () => {
+          if (context.state === 'suspended') {
+            context.resume();
+          }
+    
+          // 👇 Play and pause once to unlock each audio element
+          const audios = document.querySelectorAll('audio');
+          audios.forEach(audio => {
+            audio.play().then(() => {
+              audio.pause();
+              audio.currentTime = 0;
+            }).catch(err => {
+              console.warn('Autoplay unlock failed:', err);
+            });
+          });
+    
+          document.removeEventListener('touchend', unlock);
+          document.removeEventListener('click', unlock);
+        };
+    
+        document.addEventListener('touchend', unlock, false);
+        document.addEventListener('click', unlock, false);
+      }
+    
+      // 🔗 Hook the function to the Start button
+      document.getElementById("startButton").addEventListener("click", startExperience);    
 
       AFRAME.registerComponent('play-audio-on-click', {
         schema: { audioId: { type: 'string' } },
