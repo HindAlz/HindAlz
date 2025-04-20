@@ -70,8 +70,10 @@
 
     <!-- 🔊 Audio tags must be in body directly -->
     <audio id="aortaAudio" src="audio/aorta.mp3" preload="auto"></audio>
-    <audio id="liverAudio" src="audio/aorta.mp3" preload="auto"></audio>
-
+    <audio id="liverAudio" src="audio/liver.mp3" preload="auto"></audio>
+    <audio id="liverAudio" src="audio\liver.mp3" preload="auto"></audio>
+    <audio id="stomachAudio" src="audio\stomach.mp3" preload="auto"></audio>
+    <audio id="ribcageAudio" src="audio\ribcage.mp3" preload="auto"></audio>
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; cameraParametersUrl: camera_para.dat">
       <a-assets>
         <a-asset-item id="heartGLB" src="heart.glb"></a-asset-item>
@@ -246,7 +248,7 @@ AFRAME.registerComponent('face-camera', {
       this.el.addEventListener('model-loaded', () => {
         const labels = [
           { name: "Aorta", position: { x: 1, y: 20, z: -5 }, color: "blue", audioId: "aortaAudio" },
-          { name: "Right Ventricle", position: { x: 8, y: 9, z: 6 }, color: "blue", audioId: "aortaAudio" }
+          { name: "Right Ventricle", position: { x: 8, y: 9, z: 6 }, color: "blue", audioId: "ventricleAudio" }
         ];
 
         labels.forEach(info => {
@@ -278,8 +280,8 @@ this.el.appendChild(label);
       this.el.addEventListener('model-loaded', () => {
         const labels = [
           { name: 'Liver', position: { x: 2, y: 2, z: -9 }, color: 'green', audioId: 'liverAudio' },
-          { name: 'Stomach', position: { x: -3, y: 0, z: -9 }, color: 'green', audioId: 'liverAudio' },
-          { name: 'Ribcage', position: { x: 2, y: 10, z: -9 }, color: 'green', audioId: 'liverAudio' }
+          { name: 'Stomach', position: { x: -3, y: 0, z: -9 }, color: 'green', audioId: 'stomachAudio' },
+          { name: 'Ribcage', position: { x: 2, y: 10, z: -9 }, color: 'green', audioId: 'ribcageAudio' }
         ];
 
         labels.forEach(info => {
