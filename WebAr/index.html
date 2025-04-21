@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Heart & Body WebAR</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #000;
+      }
+
+      #startOverlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(135deg, #141e30, #243b55);
+        color: white;
+        font-size: 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        text-align: center;
+        padding: 30px 20px;
+        box-sizing: border-box;
+        animation: fadeIn 1s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: scale(1.05); }
+        to { opacity: 1; transform: scale(1); }
+      }
+
+      #startOverlay h1 {
+        font-size: 36px;
+        margin-bottom: 24px;
+        color: #00ffe1;
+      }
+
+      #startOverlay p {
+        margin: 10px 0;
+        line-height: 1.6;
+        color: #dddddd;
+        max-width: 300px;
+      }
+
+      .start-button {
+        margin-top: 30px;
+        padding: 14px 32px;
+        font-size: 18px;
+        font-weight: bold;
+        background-color: #00ffe1;
+        color: #000;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(0, 255, 225, 0.4);
+      }
+      .list-button {
+        background-color: #00ffe1;
+        color: #000;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(0, 255, 225, 0.4);
+      }
+
+      .start-button:hover {
+        background-color: #00cbb9;
+        transform: scale(1.05);
+        box-shadow: 0 6px 14px rgba(0, 255, 225, 0.5);
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Start Overlay -->
+    <div id="startOverlay">
+      <h1>Welcome to Anatomy AR</h1>
+      <p>📱 Point your phone at the printed marker</p>
+      <p>🔍 Pinch to zoom</p>
+      <p>🌀 Use one finger to rotate the model</p>
+      <p>🔊 Tap on organ labels to hear audio</p>
+      <button id="startButton" class="start-button">Tap to Start</button>
+    </div>
+    <div id="uiPanel" style="position: absolute; top: 10px; left: 10px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;">
+      <button onclick="setMode('marker')" style="padding: 10px 20px; font-size: 16px;">Marker Mode</button>
+      <button onclick="selectPlacingModel('body')" style="padding: 10px 20px; font-size: 16px;">Place Body</button>
+      <button onclick="selectPlacingModel('heart')" style="padding: 10px 20px; font-size: 16px;">Place Heart</button>
+      <button onclick="setMode('markerless')" style="padding: 10px 20px; font-size: 16px;">Remove</button>
+
+    </div>
+    
+    <!-- Scene -->
+    <a-scene
+      embedded
+      tap-place
+      arjs="sourceType: webcam; debugUIEnabled: false; cameraParametersUrl: camera_para.dat"
+    >
+      <a-assets>
+        <a-asset-item id="heartModelGLB" src="heart.glb"></a-asset-item>
+        <a-asset-item id="bodyGLB" src="body.glb"></a-asset-item>
+        <audio id="heartAudio" src="audio\aorta.mp3" preload="auto"></audio>
+        <audio id="ventricleAudio" src="audio\ventricle.mp3" preload="auto"></audio>
+        <audio id="liverAudio" src="audio\liver.mp3" preload="auto"></audio>
+        <audio id="stomachAudio" src="audio\stomach.mp3" preload="auto"></audio>
+        <audio id="ribcageAudio" src="audio\ribcage.mp3" preload="auto"></audio>
+      </a-assets>
+      <!-- Bright ambient light -->
+      <a-entity light="type: ambient; color: #ffffff; intensity: 2.5"></a-entity>
+
+      <!-- Directional light to mimic sunlight -->
+      <a-entity light="type: directional; color: #ffffff; intensity: 2" position="1 3 2"></a-entity>
+
+      <!-- Markerless -->
+      <a-entity id="placedBody" visible="false" gltf-model="#bodyGLB" scale="0.03 0.03 0.03" add-labels-on-load drag-rotate arrow-move>
+        <a-text value="Liver" position="4 1 -10" rotation="0 180 0" scale="6 6 6" color="green" class="clickable" onclick="playAudio('liverAudio')" face-camera material="side: double"></a-text>
+          <a-text value="Stomach" position="-3 0 -8" rotation="0 180 0" scale="6 6 6" color="green" class="clickable" onclick="playAudio('stomachAudio')" face-camera material="side: double"></a-text>
+          <a-text value="ribcage" position="0 11 -9" rotation="0 180 0" scale="6 6 6" color="green" class="clickable" onclick="playAudio('ribcageAudio')" face-camera material="side: double"></a-text>
+        </a-entity>
+        <a-entity id="placedHeartModel" visible="false" gltf-model="heart.glb" scale="0.003 0.003 0.003" add-labels-on-load drag-rotate arrow-move>
+          <a-text value="Aorta" position="3 0 -12" face-camera rotation="0 180 0" scale="6 6 6" color="blue" class="clickable" onclick="playAudio('heartAudio')" material="side: double"></a-text>
+          <a-text value="Right Ventricle" position="0 0 15" face-camera scale="6 6 6" rotation="0 0 0" color="blue" class="clickable" onclick="playAudio('ventricleAudio')" material="side: double"></a-text>
+        </a-entity>
+
+      <!-- Camera -->
+      <a-entity id="mainCamera" camera cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
+
+      <!-- Marker 1: Body -->
+      <a-marker id="customMarker" type="pattern" preset="custom" url="marker.patt" emitevents="true">
+        <a-entity id="markerBody" gltf-model="body.glb" scale="0.03 0.03 0.03" rotation="-90 0 0" visible="false" drag-rotate arrow-move>
+          <!-- Labels for Body -->
+          <a-text value="Liver" position="4 1 -8" rotation="0 180 0" scale="6 6 6" color="green"  face-camera material="side: double"></a-text>
+          <a-text value="Stomach" position="-3 0 -8" rotation="0 180 0" scale="6 6 6" color="green"  face-camera material="side: double"></a-text>
+          <a-text value="ribcage" position="0 11 -9" rotation="0 180 0" scale="6 6 6" color="green"  face-camera material="side: double"></a-text>
+        </a-entity>
+      </a-marker>
+
+      <!-- Marker 2: Heart -->
+      <a-marker id="heartMarker" type="pattern" preset="custom" url="heart-marker.patt" emitevents="true">
+        <a-entity id="markerHeart" gltf-model="heart.glb" scale="0.05 0.05 0.05" rotation="-90 0 0" visible="false" drag-rotate arrow-move>
+          <a-text value="Aorta" position="3 0 -12" scale="6 6 6" color="blue"   face-camera material="side: double"></a-text>
+          <a-text value="Right Ventricle" position="0 0 15" scale="6 6 6" color="blue" face-camera material="side: double"></a-text>
+        </a-entity>
+      </a-marker>
+      
+    </a-scene>
+
+    <script>
+      let mode = null;
+      let placingEnabled = false;
+      let placingModel = null;
+
+      function selectPlacingModel(model) {
+  mode = 'markerless';
+  placingModel = model;
+  placingEnabled = true;
+  alert(`Tap to place the ${model}.`);
+}
+
+      function setMode(selectedMode) {
+  mode = selectedMode;
+  placingEnabled = false;
+
+  ['markerHeart', 'markerBody', 'placedHeartModel', 'placedBody'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('visible', false);
+  });
+
+  if (mode === 'marker') {
+    alert('Point your camera at the marker.');
+  } else if (mode === 'markerless') {
+    alert('Select "Place Body" or "Place Heart" to begin placement.');
+  }
+}
+
+
+      function togglePanel() {
+        const panel = document.getElementById('uiPanel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      }
+
+      document.getElementById('startButton').addEventListener('click', function () {
+        document.getElementById('startOverlay').style.display = 'none';
+
+        const audios = document.querySelectorAll('audio');
+        audios.forEach(audio => {
+  if (audio.paused) {
+    audio.play().then(() => {
+      audio.pause();
+      audio.currentTime = 0;
+    }).catch(err => {
+      console.warn('Autoplay unlock failed:', err);
+    });
+  }
+});
+
+  
+      });
+
+  function playAudio(audioId) {
+    const audio = document.getElementById(audioId);
+    const visibleLabel = event?.target;
+
+    // Only play if the label is actually visible
+    if (visibleLabel && visibleLabel.object3D.visible && audio) {
+      audio.play();
+    }
+  }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        // Body Marker Events
+        const bodyMarker = document.getElementById('customMarker');
+        const markerBody = document.getElementById('markerBody');
+
+        bodyMarker.addEventListener('markerFound', () => {
+          console.log('Body marker found');
+          markerBody.setAttribute('visible', true);
+        });
+
+        bodyMarker.addEventListener('markerLost', () => {
+          console.log('Body marker lost');
+          markerBody.setAttribute('visible', false);
+        });
+
+        // Heart Marker Events
+        const heartMarker = document.getElementById('heartMarker');
+        const markerHeart = document.getElementById('markerHeart');
+
+        heartMarker.addEventListener('markerFound', () => {
+          console.log('Heart marker found');
+          markerHeart.setAttribute('visible', true);
+        });
+
+        heartMarker.addEventListener('markerLost', () => {
+          console.log('Heart marker lost');
+          markerHeart.setAttribute('visible', false);
+        });
+      });
+
+      AFRAME.registerComponent('face-camera', {
+  tick: function () {
+    const camera = document.querySelector('[camera]');
+    if (!camera) return;
+
+    const object3D = this.el.object3D;
+    const camPosition = new THREE.Vector3();
+    camera.object3D.getWorldPosition(camPosition);
+    object3D.lookAt(camPosition);
+  }
+});
+      // Register the rotation and movement components to all models that need them
+      AFRAME.registerComponent('drag-rotate', {
+        schema: {
+          speed: { default: 0.15 },
+          zoomSpeed: { default: 0.0008 },
+          panSpeed: { default: 0.0015 }
+        },
+        init: function () {
+          this.isDragging = false;
+          this.previousPosition = null;
+          this.scale = 1;
+          this.pan = { x: 0, y: 0 };
+          this.rotation = { x: 0, y: 0 };
+          this.el.setAttribute('rotation', this.rotation);
+
+          const el = this.el;
+          const scene = el.sceneEl;
+
+          scene.addEventListener('mousedown', (e) => {
+            this.isDragging = true;
+            this.previousPosition = { x: e.clientX, y: e.clientY };
+          });
+          window.addEventListener('mouseup', () => { this.isDragging = false; });
+          scene.addEventListener('mousemove', (e) => {
+            if (!this.isDragging) return;
+            const dx = e.clientX - this.previousPosition.x;
+            const dy = e.clientY - this.previousPosition.y;
+            this.rotation.y -= dx * this.data.speed;
+            this.rotation.x -= dy * this.data.speed;
+            el.setAttribute('rotation', this.rotation);
+            this.previousPosition = { x: e.clientX, y: e.clientY };
+          });
+
+          scene.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            this.scale += -e.deltaY * this.data.zoomSpeed;
+            this.scale = Math.max(0.001, Math.min(5, this.scale));
+            el.setAttribute('scale', `${this.scale} ${this.scale} ${this.scale}`);
+          });
+
+          scene.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+              this.isDragging = true;
+              this.previousPosition = {
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY
+              };
+            } else if (e.touches.length === 2) {
+              this.isPinching = true;
+              this.previousDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+              );
+            }
+          });
+
+          scene.addEventListener('touchmove', (e) => {
+            if (!this.isDragging && !this.isPinching) return;
+            if (e.touches.length === 1) {
+              const dx = e.touches[0].clientX - this.previousPosition.x;
+              const dy = e.touches[0].clientY - this.previousPosition.y;
+              this.rotation.y -= dx * this.data.speed;
+              this.rotation.x -= dy * this.data.speed;
+              el.setAttribute('rotation', this.rotation);
+              this.previousPosition = {
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY
+              };
+            } else if (e.touches.length === 2) {
+              const newDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+              );
+              const diff = newDistance - this.previousDistance;
+              this.scale += diff * this.data.zoomSpeed;
+              this.scale = Math.max(0.001, Math.min(5, this.scale));
+              el.setAttribute('scale', `${this.scale} ${this.scale} ${this.scale}`);
+              this.previousDistance = newDistance;
+            }
+          });
+        }
+      });
+AFRAME.registerComponent('tap-place', {
+  init: function () {
+    const scene = this.el;
+    scene.addEventListener('click', (event) => {
+      if (mode !== 'markerless' || !placingEnabled || !placingModel) return;
+
+      const camera = document.getElementById('mainCamera').object3D;
+      const direction = new THREE.Vector3();
+      camera.getWorldDirection(direction);
+
+      const position = new THREE.Vector3();
+      camera.getWorldPosition(position);
+
+      direction.multiplyScalar(-0.8); // Place 0.8m in front
+      position.add(direction);
+
+      // Determine which model to place
+      const bodyModel = document.getElementById('placedBody');
+const heartModel = document.getElementById('placedHeartModel');
+
+// Hide both models and reset their position
+[bodyModel, heartModel].forEach(el => {
+  if (el) {
+    el.setAttribute('visible', false);
+    el.setAttribute('position', '0 0 0');
+  }
+});
+
+// Show only the selected model
+const selectedModel = placingModel === 'body' ? bodyModel : heartModel;
+if (selectedModel) {
+  selectedModel.setAttribute('position', position);
+  selectedModel.setAttribute('visible', true);
+  hasPlacedModel = true;
+}
+
+placingEnabled = false;
+
+    });
+  }
+});
+function resetScene() {
+  if (!hasPlacedModel) {
+    console.log("Reset ignored: No model was placed yet.");
+    return;
+  }
+
+  ['placedBody', 'placedHeartModel', 'markerHeart', 'markerBody'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.setAttribute('visible', false);
+      el.setAttribute('position', '0 0 0');
+    }
+  });
+
+  placingEnabled = true;
+  hasPlacedModel = false; // Reset the tracker
+}
+
+
+AFRAME.registerComponent('arrow-move', {
+  schema: {
+    speed: { type: 'number', default: 0.1 }
+  },
+  init: function () {
+    const el = this.el;
+
+    // Keyboard movement
+    window.addEventListener('keydown', (e) => {
+      const position = el.getAttribute('position');
+      if (!position) return;
+
+      switch (e.key) {
+        case 'ArrowUp':
+          position.y += this.data.speed;
+          break;
+        case 'ArrowDown':
+          position.y -= this.data.speed;
+          break;
+        case 'ArrowLeft':
+          position.x -= this.data.speed;
+          break;
+        case 'ArrowRight':
+          position.x += this.data.speed;
+          break;
+      }
+      el.setAttribute('position', position);
+    });
+  }
+});
+</script>
+
+
+    </script>
+  </body>
+</html>
